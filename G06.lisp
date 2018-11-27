@@ -150,7 +150,7 @@ custo )  )
 )
 
 (defun faz-afectacao(problema tipo-procura)
-  (let ((csp NIL))
+  (let ((csp NIL) (problema NIL))
     (setf csp (csp-inicial problema))
     (setf problema (cria-problema csp (list #'successors) :custo #'custo :heuristica #'heuristica)) 
     (procura problema tipo-procura)
