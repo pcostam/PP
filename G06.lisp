@@ -1,5 +1,5 @@
+(require 'procura)
 (in-package :user)
-
 
 (defun qsort (L)
   (cond
@@ -25,7 +25,6 @@
 
 (defstruct csp
   variables
-  max_lim
   assignments
   )
 
@@ -41,7 +40,6 @@
        (setq t_end (elt tarefa 3))
        (setq t_init (elt tarefa 2))
        (setq t_tarefa (- t_end t_init))
-       (print tarefa)
        (setf var_values (append var_values (list (cons tarefa (list t_tarefa))))
         )
       
@@ -49,9 +47,8 @@
         ))
     
   (let ((ini
-  (make-csp       :variables var_values
-            :max_lim 480 
-            :assignments (make-hash-table))))
+  (make-csp :variables var_values
+            :assignments nil)))
                  
     ini)
    )
@@ -82,11 +79,65 @@ custo )  )
 )
   
 (defun estado(estado_inicial estado_final)
-  (equalp estado_inicial estado_final))
+  (equalp estado_inicial estado_final)
+)
 
+(defun successors(state)
+	(let ((children nil) (task (nth 0 (csp-variables state))) (vars (csp-variables state)) (shifts (csp-assignments state)))
+		(cond ((eq shifts nil)
+				(let* ((new_state (make-csp :variables (remove task (copy-list vars))
+										    :assignments (list (list (copy-list task)))))
+					   (valid (constrictions new_state T))
+					  )
+
+					(cond ( (eq valid T) (setf children (list new_state)) ) )
+				)
+			  )
+			  (t
+				(dotimes (i (list-length shifts))
+					(let ((new_shifts (copy-list shifts)))
+						(substitute (append (nth i new_shifts) (list (copy-list task))) (nth i new_shifts) new_shifts)
+						(let* ((new_state (make-csp :variables (remove task (copy-list vars))
+													:assignments new_shifts))
+							   (valid (constrictions new_state nil))
+							  )
+							(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
+								  ( (and (eq valid T) (not (eq children nil))) (nconc children (list new_state)) )
+							)
+						)
+					)
+				)
+				(let* ((new_shifts (append (copy-list shifts) (list (list(copy-list task)))))
+					   (new_state (make-csp :variables (remove task (copy-list vars))
+											:assignments new_shifts))
+					   (valid (constrictions new_state T))
+					  )
+
+					(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
+						  ( (and (eq valid T) (not (eq children nil))) (nconc children (list new_state)) )
+					)
+				)
+			  )
+		)
+
+		(print children)
+		children
+	)
+)
+
+(defun constrictions(state cheat)
+	cheat
+)
 
 (defun heuristica(estado)
   )
 
 (defun faz-afectacao(problema)
 )
+
+(setf a (csp-inicial '((L2 L1 1 25) (L1 L2 34 60) (L5 L1 408 447) (L1 L1 448 551) (L1 L1 474 565))))
+(setf b (successors a))
+(setf c (nth 0 b))
+(setf d (successors c))
+(setf e (nth 0 d))
+(setf f (successors e))
