@@ -1,4 +1,3 @@
-(require 'procura)
 (in-package :user)
 
 (defun qsort (L)
@@ -30,30 +29,13 @@
 
 (defun csp-inicial(problema)
   (setf problema (qsort problema))
-  (let ((var_values NIL) (t_end NIL) (t_init NIL) (t_tarefa NIL) (tarefa NIL)) 
-    
-    (dotimes (i (list-length problema))      
-      (let(
-            (tarefa (elt problema i))
- 
-           )
-       (setq t_end (elt tarefa 3))
-       (setq t_init (elt tarefa 2))
-       (setq t_tarefa (- t_end t_init))
-       (setf var_values (append var_values (list tarefa))
-        )
-      
-      
-        ))
-    
+
   (let ((ini
-  (make-csp :variables var_values
+  (make-csp :variables problema
             :assignments nil)))
                  
     ini)
-   )
-  )
-
+)
 
 (defun duracao_tarefa(tarefa)
   
@@ -147,6 +129,7 @@ custo )  )
 )
 
 (defun heuristica(estado)
+  (list-length (csp-assignments estado))
 )
 
 (defun faz-afectacao(problema tipo-procura)
@@ -165,3 +148,5 @@ custo )  )
 (setf f (nth 1 d))
 (setf g (successors e))
 (setf h (successors f))
+(setf o_state (make-csp :variables () :assignments '(((L2 L1 1 25) (L1 L2 34 60)) ((L5 L1 408 447) (L1 L1 448 551)) ((L1 L1 474
+565)))))
