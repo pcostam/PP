@@ -40,7 +40,7 @@
        (setq t_end (elt tarefa 3))
        (setq t_init (elt tarefa 2))
        (setq t_tarefa (- t_end t_init))
-       (setf var_values (append var_values (list (cons tarefa (list t_tarefa))))
+       (setf var_values (append var_values (list tarefa))
         )
       
       
@@ -147,9 +147,14 @@ custo )  )
 )
 
 (defun heuristica(estado)
-  )
+)
 
-(defun faz-afectacao(problema)
+(defun faz-afectacao(problema tipo-procura)
+  (let ((csp NIL))
+    (setf csp (csp-inicial problema))
+    (setf problema (cria-problema csp (list #'successors) :custo #'custo :heuristica #'heuristica)) 
+    (procura problema tipo-procura)
+  )
 )
 
 (setf a (csp-inicial '((L2 L1 1 25) (L1 L2 34 60) (L5 L1 408 447) (L1 L1 448 551) (L1 L1 474 565))))
