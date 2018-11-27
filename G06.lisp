@@ -82,12 +82,13 @@ custo )  )
   (equalp estado_inicial estado_final)
 )
 
+;;; successor generation
 (defun successors(state)
 	(let ((children nil) (task (nth 0 (csp-variables state))) (vars (csp-variables state)) (shifts (csp-assignments state)))
 		(cond ((eq shifts nil)
 				(let* ((new_state (make-csp :variables (remove task (copy-list vars))
 										    :assignments (list (list (copy-list task)))))
-					   (valid (constrictions new_state T))
+					   (valid (constrictions new_state))
 					  )
 
 					(cond ( (eq valid T) (setf children (list new_state)) ) )
@@ -101,7 +102,7 @@ custo )  )
 						(setf (nth i new_shifts) new_shift)
 						(let* ((new_state (make-csp :variables (remove task (copy-list vars))
 													:assignments new_shifts))
-							   (valid (constrictions new_state T))
+							   (valid (constrictions new_state))
 							  )
 							(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
 								  ( (and (eq valid T) (not (eq children nil))) (nconc children (list new_state)) )
@@ -112,7 +113,7 @@ custo )  )
 				(let* ((new_shifts (append (copy-list shifts) (list (list(copy-list task)))))
 					   (new_state (make-csp :variables (remove task (copy-list vars))
 											:assignments new_shifts))
-					   (valid (constrictions new_state T))
+					   (valid (constrictions new_state))
 					  )
 
 					(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -126,8 +127,23 @@ custo )  )
 	)
 )
 
-(defun constrictions(state cheat)
-	cheat
+;;; constriction checks
+ ;;shift is 8 hours long at most;
+ ;;there is an obligatory meal break at the 4-hour mark at the latest, and not more than one break (40 mins long);
+ ;;there is a transportation block (40 mins) where it is necessary to move to another station for the next task.
+(defun temporal-validity(shift)
+	T
+)
+
+(defun constrictions(state)
+	(let ((valid T)
+		  (shifts (csp-assignments state))
+		 )
+		(dotimes (i (list-length shifts))
+			(setf valid (temporal-validity (nth i shifts)))
+		)
+		valid
+	)
 )
 
 (defun heuristica(estado)
