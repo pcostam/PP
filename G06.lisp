@@ -25,14 +25,18 @@
 (defstruct csp
   variables
   assignments
-  )
+  no-service-counter
+  shift-counter
+ )
 
 (defun csp-inicial(problema)
   (setf problema (qsort problema))
 
   (let ((ini
   (make-csp :variables problema
-            :assignments nil)))
+            :assignments nil
+			:no-service-counter 0
+			:shift-counter 0)))
                  
     ini)
 )
@@ -69,7 +73,9 @@ custo )  )
 	(let ((children nil) (task (nth 0 (csp-variables state))) (vars (csp-variables state)) (shifts (csp-assignments state)))
 		(cond ((eq shifts nil)
 				(let* ((new_state (make-csp :variables (remove task (copy-list vars))
-										    :assignments (list (list (copy-list task)))))
+										    :assignments (list (list (copy-list task)))
+											:no-service-counter 0
+											:shift-counter 1))
 					   (valid (constrictions new_state))
 					  )
 
@@ -78,11 +84,13 @@ custo )  )
 			  )
 			  (t
 				(let* ((new_shifts (copy-list shifts))
-					   (new_shift (append (nth (- (list-length new_shifts) 1) new_shifts) (list (copy-list task))))
+					   (new_shift (append (nth (- (csp-shift-counter state) 1) new_shifts) (list (copy-list task))))
 					  )
-					(setf (nth (- (list-length new_shifts) 1) new_shifts) new_shift)
+					(setf (nth (- (csp-shift-counter state) 1) new_shifts) new_shift)
 					(let* ((new_state (make-csp :variables (remove task (copy-list vars))
-												:assignments new_shifts))
+												:assignments new_shifts
+												:no-service-counter 0
+												:shift-counter (csp-shift-counter state)))
 						   (valid (constrictions new_state))
 						  )
 						(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -92,10 +100,11 @@ custo )  )
 				)
 				(let* ((new_shifts (append (copy-list shifts) (list (list(copy-list task)))))
 					   (new_state (make-csp :variables (remove task (copy-list vars))
-											:assignments new_shifts))
+											:assignments new_shifts
+											:no-service-counter 0
+											:shift-counter (+ (csp-shift-counter state) 1)))
 					   (valid (constrictions new_state))
 					  )
-
 					(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
 						  ( (and (eq valid T) (not (eq children nil))) (nconc children (list new_state)) )
 					)
@@ -103,7 +112,6 @@ custo )  )
 			  )
 		)
 		(print children)
-		(print 'cry)
 		children
 	)
 )
@@ -112,23 +120,30 @@ custo )  )
  ;;shift is 8 hours long at most;
  ;;there is an obligatory meal break at the 4-hour mark at the latest, and no more than one (40 mins long);
  ;;there is a transportation block (40 mins) where it is necessary to move to another station for the next task.
-(defun shift-validity(shift)
+(defun shift-validity(shift state)
 	(let ((time-count 0) (start-task (nth 0 shift)) (last-task (nth (- (list-length shift) 1) shift)) (valid T))
-		(cond ( (not (eq 'L1 (nth 0 start-task))) (setf time-count (+ time-count 40)) ) )
+		(cond ((not (eq 'L1 (nth 0 start-task)))
+				(setf time-count (+ time-count 40))
+				(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
+			  )
+		)
 		(setf time-count (+ time-count (- (nth 3 start-task) (nth 2 start-task))))
 		(dotimes (i (- (list-length shift) 1))
 			(let ((task (nth i shift)) (next-task (nth (+ i 1) shift)) (old-time time-count))
 				(setf time-count (+ time-count (- (nth 3 next-task) (nth 2 next-task))))
 				(cond ((not (eq (nth 1 task) (nth 0 next-task)))
 							(cond ( (< (- (nth 2 next-task) (nth 3 task)) 40) (setf valid nil) ) )
+							(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
 							(cond ((and (<= old-time 240) (> time-count 240))
 										(cond ( (< (- (nth 2 next-task) (nth 3 task)) 80) (setf valid nil) ) )
+										(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
 								  )
 							)
 					  )
 					  (t
 							(cond ((and (<= old-time 240) (> time-count 240))
 										(cond ( (< (- (nth 2 next-task) (nth 3 task)) 40) (setf valid nil) ) )
+										(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
 								  )
 							)
 					  )
@@ -137,7 +152,11 @@ custo )  )
 				(cond ( (> time-count 480) (setf valid nil) ) )
 			)
 		)
-		(cond ( (not (eq 'L1 (nth 1 last-task))) (setf time-count (+ time-count 40)) ) )
+		(cond ((not (eq 'L1 (nth 1 last-task)))
+				(setf time-count (+ time-count 40))
+				(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
+			  )
+		)
 		(cond ( (> time-count 480) (setf valid nil) ) )
 		valid
 	)
@@ -147,8 +166,8 @@ custo )  )
 	(let ((valid T)
 		  (shifts (csp-assignments state))
 		 )
-		(dotimes (i (list-length shifts))
-			(setf valid (shift-validity (nth i shifts)))
+		(dotimes (i (csp-shift-counter state))
+			(setf valid (shift-validity (nth i shifts) state))
 		)
 		valid
 	)
