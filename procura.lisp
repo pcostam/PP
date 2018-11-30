@@ -785,7 +785,6 @@ Estrategia A*."
 
 (defun profundidade-primeiro (problema profundidade-maxima) 
   "Algoritmo de procura em profundidade primeiro."
-
   (let ((estado= (problema-estado= problema))
 	(objectivo? (problema-objectivo? problema)))
 
@@ -794,7 +793,6 @@ Estrategia A*."
 	     
 	     (procura-prof (estado caminho prof-actual)
 	       (block procura-prof
-		 
 		 ;; base da recursao:
 		 ;; 1. quando comecamos a repetir estados pelos quais ja
 		 ;;    passamos no caminho que esta a ser percorrido
@@ -832,13 +830,59 @@ Estrategia A*."
 	(when solucao 
 	  (return-from profundidade-iterativa solucao))))))
 
+(defun random-from-range (start end)
+  (+ start (random (+ 1 (- end start)))))
+  
+;;;
+;;;              Sondagem iterativa
+;;;
+(defun sondagem.iterativa (problema profundidade-maxima)
+  (let ((estado= (problema-estado= problema))
+	(objectivo? (problema-objectivo? problema)))
 
+    (labels ((esta-no-caminho? (estado caminho)
+	       (member estado caminho :test estado=))
+	     
+	     (procura-aleatoria (estado caminho prof-actual)
+	       (block procura-aleatoria
+		 ;; base da recursao:
+		 ;; 1. quando comecamos a repetir estados pelos quais ja
+		 ;;    passamos no caminho que esta a ser percorrido
+		 ;;    (para evitar caminhos infinitos)
+		 ;; 2. quando atingimos o objectivo
+		 ;; 3. quando ultrapassamos a profundidade limite ate
+		 ;;    onde se deve efectuar a procura
+		 (cond ((funcall objectivo? estado) (list estado))
+		       ((= prof-actual profundidade-maxima) nil)
+		       ((esta-no-caminho? estado caminho) nil)
+		       (t 
+		
+								   
+				(let((sucs (problema-gera-sucessores problema estado))
+				  (idx 0)  (suc NIL))
+				(setf idx (random-from-range 0 (- (list-length sucs) 1)))
+				(print idx)
+				(setf suc (elt sucs idx))
 
+			  ;; avancamos recursivamente, em profundidade,
+			  ;; para cada sucessor
+			  (let ((solucao (procura-aleatoria suc 
+						       (cons estado caminho)
+						       (1+ prof-actual))))
+			    (when solucao
+			      (return-from procura-aleatoria (cons estado
+							      solucao))))))))))
+      
+      (procura-aleatoria (problema-estado-inicial problema) nil 0))))
+	
+      
+
+	  
+	  
 ;;;
 ;;; Funcao de interface que permite condensar todos os tipos de
 ;;; procura numa so funcao.
 ;;;
-
 
 (defun procura (problema tipo-procura
 		&key (profundidade-maxima most-positive-fixnum)
@@ -868,7 +912,9 @@ Estrategia A*."
 		 ((string-equal tipo-procura "a*")
 		  (a* problema :espaco-em-arvore? espaco-em-arvore?))
 		 ((string-equal tipo-procura "ida*")
-		  (ida* problema :espaco-em-arvore? espaco-em-arvore?)))))
+		  (ida* problema :espaco-em-arvore? espaco-em-arvore?))
+		 ((string-equal tipo-procura "sondagem.iterativa")
+		  (sondagem.iterativa problema profundidade-maxima)))))
 
     (let ((*nos-gerados* 0)
 	  (*nos-expandidos* 0)
