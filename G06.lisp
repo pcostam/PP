@@ -27,6 +27,7 @@
   assignments
   no-service-counter
   shift-counter
+  cost
  )
 
 (defun csp-inicial(problema)
@@ -36,7 +37,8 @@
   (make-csp :variables problema
             :assignments nil
 			:no-service-counter 0
-			:shift-counter 0)))
+            :shift-counter 0
+            :cost 0)))
                  
     ini)
 )
@@ -52,16 +54,15 @@
 
 
 (defun custo(estado)
-  (let ((custo 0))
-    (loop for custo_turno being the hash-values of (csp-assignments estado)
-               do (setq custo (+ custo custo_turno))
-   ) 
-custo )  )
+  (csp-cost estado) 
+)
 
 
 (defun objectivo(estado) 
-  (if (equal (csp-variables estado) NIL) T)
-  NIL
+  (let ((is_objective NIL))
+    (if (equal (csp-variables estado) NIL) (setf is_objective T))
+  is_objective
+  )
 )
   
 (defun estado(estado_inicial estado_final)
@@ -75,7 +76,8 @@ custo )  )
 				(let* ((new_state (make-csp :variables (remove task (copy-list vars))
 										    :assignments (list (list (copy-list task)))
 											:no-service-counter 0
-											:shift-counter 1))
+                                :shift-counter 1
+                                :cost (csp-cost state)))
 					   (valid (constrictions new_state))
 					  )
 
@@ -90,7 +92,8 @@ custo )  )
 					(let* ((new_state (make-csp :variables (remove task (copy-list vars))
 												:assignments new_shifts
 												:no-service-counter 0
-												:shift-counter (csp-shift-counter state)))
+                                 :shift-counter (csp-shift-counter state)
+                                 :cost (csp-cost state)))
 						   (valid (constrictions new_state))
 						  )
 						(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -102,7 +105,8 @@ custo )  )
 					   (new_state (make-csp :variables (remove task (copy-list vars))
 											:assignments new_shifts
 											:no-service-counter 0
-											:shift-counter (+ (csp-shift-counter state) 1)))
+                             :shift-counter (+ (csp-shift-counter state) 1)
+                             :cost (csp-cost state)))
 					   (valid (constrictions new_state))
 					  )
 					(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -123,14 +127,14 @@ custo )  )
 (defun shift-validity(shift state)
 	(let ((time-count 0) (start-task (nth 0 shift)) (last-task (nth (- (list-length shift) 1) shift)) (valid T))
 		(cond ((not (eq 'L1 (nth 0 start-task)))
-				(setf time-count (+ time-count 40))
+                                (setf time-count (+ time-count 40))
 				(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
 			  )
 		)
-		(setf time-count (+ time-count (- (nth 3 start-task) (nth 2 start-task))))
+                (setf time-count (+ time-count (- (nth 3 start-task) (nth 2 start-task))))
 		(dotimes (i (- (list-length shift) 1))
 			(let ((task (nth i shift)) (next-task (nth (+ i 1) shift)) (old-time time-count))
-				(setf time-count (+ time-count (- (nth 3 next-task) (nth 2 next-task))))
+                                (setf time-count (+ time-count (- (nth 3 next-task) (nth 2 next-task))))
 				(cond ((not (eq (nth 1 task) (nth 0 next-task)))
 							(cond ( (< (- (nth 2 next-task) (nth 3 task)) 40) (setf valid nil) ) )
 							(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
@@ -148,18 +152,24 @@ custo )  )
 							)
 					  )
 				)
-				(setf time-count (+ time-count (- (nth 2 next-task) (nth 3 task))))
+                                (setf time-count (+ time-count (- (nth 2 next-task) (nth 3 task))))
 				(cond ( (> time-count 480) (setf valid nil) ) )
 			)
 		)
 		(cond ((not (eq 'L1 (nth 1 last-task)))
-				(setf time-count (+ time-count 40))
+                                (setf time-count (+ time-count 40))
 				(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
 			  )
 		)
 		(cond ( (> time-count 480) (setf valid nil) ) )
-		valid
-	)
+   
+      (cond ((equal valid T) (setf (csp-cost state) (+ (csp-cost state) time-count))))
+   
+   valid
+   
+
+   )
+  
 )
 
 (defun constrictions(state)
@@ -173,17 +183,24 @@ custo )  )
 	)
 )
 
-(defun heuristica(estado)
+(defun heuristica_1(estado)
+  (csp-no-service-counter estado)
+)
+
+(defun heuristica_2(estado)
   (list-length (csp-assignments estado))
 )
 
-(defun faz-afectacao(problema tipo-procura)
+(defun faz-afectacao(tarefas tipo-procura)
   (let ((csp NIL) (problema NIL))
-    (setf csp (csp-inicial problema))
-    (setf problema (cria-problema csp (list #'successors) :custo #'custo :heuristica #'heuristica)) 
-    (procura problema tipo-procura)
-  )
-)
+    (setf csp (csp-inicial tarefas))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :estado= #'estado :custo #'custo :heuristica #'heuristica_1 ))
+    (print problema)
+    (procura problema tipo-procura :espaco-em-arvore? T)
+))
+
+
+
 
 (setf a (csp-inicial '((L2 L1 1 25) (L1 L2 34 60) (L5 L1 408 447) (L1 L1 448 551) (L1 L1 474 565))))
 (setf b (successors a))
