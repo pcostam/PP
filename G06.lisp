@@ -194,14 +194,14 @@
 (defun faz-afectacao(tarefas tipo-procura)
   (let ((csp NIL) (problema NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :estado= #'estado :custo #'custo :heuristica #'heuristica_1 ))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_1 :estado= #'estado   ))
     (print problema)
     (procura problema tipo-procura :espaco-em-arvore? T)
 ))
 
 
 
-
+(setf x '((L2 L1 1 25) (L1 L2 34 60) (L5 L1 408 447) (L1 L1 448 551) (L1 L1 474 565)))
 (setf a (csp-inicial '((L2 L1 1 25) (L1 L2 34 60) (L5 L1 408 447) (L1 L1 448 551) (L1 L1 474 565))))
 (setf b (successors a))
 (setf c (nth 0 b))

@@ -52,8 +52,6 @@
 
 
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Variaveis dinamicas utilizadas para estatisticas
@@ -658,8 +656,6 @@ Estrategia A*."
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
 
 (defun a* (problema &key espaco-em-arvore?)
   (let ((espaco (novo-espaco-a* problema
@@ -830,6 +826,114 @@ Estrategia A*."
 	(when solucao 
 	  (return-from profundidade-iterativa solucao))))))
 
+	  
+
+
+(defun backtrack(problema)
+)	 
+(defun select-value(problema)
+) 
+
+(defun ILDSProbe(problema estado k rDepth)
+    (let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
+	(min_heur 0)
+	(heur_actual 0)
+	(heur (problema-heuristica problema)))
+	(dolist (suc sucs)
+   (let ((i 0))
+				  (cond ((= i 0)
+				     (setf min_heur (funcall heur suc))
+					 (setf melhor_suc_h suc)
+					 )
+				  (t
+			      (setf heur_actual (funcall heur suc))
+				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
+				  (setq i (+ i 1))
+	))))
+	(remove melhor_suc_h sucs)
+	(when(> rDepth k) (ILDSProbe problema melhor_suc_h k (- rDepth 1)))
+	(when(> k 0) 
+	(dolist (suc sucs)
+		(ILDSProbe problema suc (- k 1) (- rDepth 1))
+	)		   
+)))
+
+
+(defun ILDS (problema profundidade-maxima)
+ "Algoritmo de procura em profundidade primeiro."
+  (let ((estado= (problema-estado= problema))
+	(objectivo? (problema-objectivo? problema))
+	(heur (problema-heuristica problema))
+	(discrepancia 0)
+	(melhor_suc_h NIL)
+	(min_heur 0)
+	(heur_actual 0)
+	(n 0))
+
+    (labels ((esta-no-caminho? (estado caminho)
+	       (member estado caminho :test estado=))
+	     
+	     (procura-discrepancia (estado caminho prof-actual)
+	       (block procura-discrepancia
+		 ;; base da recursao:
+		 ;; 1. quando comecamos a repetir estados pelos quais ja
+		 ;;    passamos no caminho que esta a ser percorrido
+		 ;;    (para evitar caminhos infinitos)
+		 ;; 2. quando atingimos o objectivo
+		 ;; 3. quando ultrapassamos a profundidade limite ate
+		 ;;    onde se deve efectuar a procura
+		 (cond ((funcall objectivo? estado) (list estado))
+		       ((= prof-actual profundidade-maxima) nil)
+		       ((esta-no-caminho? estado caminho) nil)
+		       (t 
+			(dolist (suc (problema-gera-sucessores problema
+							       estado))
+			  ;; avancamos recursivamente, em profundidade,
+			  ;; para cada sucessor
+			
+			  (cond (( = discrepancia 0)
+			    (let ((i 0))
+				  (cond ((= i 0)
+				     (setf min_heur (funcall heur suc))
+					 (setf melhor_suc_h suc)
+					 )
+				  (t
+			      (setf heur_actual (funcall heur suc))
+				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
+				  (setq i (+ i 1))
+				  )
+				  ))
+				  (print 'min_heur)
+				  (print min_heur)
+				  (print 'prof-actual)
+				  (print prof-actual)
+				  (setq n prof-actual)
+				  (let ((solucao (procura-discrepancia melhor_suc_h 
+								   (cons estado caminho)
+								   (1+ prof-actual))))
+					
+					(when solucao
+					  (return-from procura-discrepancia (cons estado
+									  solucao))))))))))))
+			
+      
+      (procura-discrepancia (problema-estado-inicial problema) nil 0)
+	  
+	  
+	   	(loop for k from 1 to n
+				do (
+				let((rDepth n) (result NIL))
+				(setf result (ILDSProbe problema (problema-estado-inicial problema) k rDepth))
+				
+				)
+	
+    )
+	  
+	  )
+	  
+			
+))
+
 (defun random-from-range (start end)
   (+ start (random (+ 1 (- end start)))))
   
@@ -837,7 +941,7 @@ Estrategia A*."
 ;;;              Sondagem iterativa
 ;;;
 (defun sondagem.iterativa (problema profundidade-maxima)
-  (let ((estado= (problema-estado= problema))
+  (let ((estado= (problema-estado= problema)) 
 	(objectivo? (problema-objectivo? problema)))
 
     (labels ((esta-no-caminho? (estado caminho)
@@ -913,6 +1017,8 @@ Estrategia A*."
 		  (a* problema :espaco-em-arvore? espaco-em-arvore?))
 		 ((string-equal tipo-procura "ida*")
 		  (ida* problema :espaco-em-arvore? espaco-em-arvore?))
+		 ((string-equal tipo-procura "ILDS")
+		  (ILDS problema profundidade-maxima))
 		 ((string-equal tipo-procura "sondagem.iterativa")
 		  (sondagem.iterativa problema profundidade-maxima)))))
 
