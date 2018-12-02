@@ -827,13 +827,6 @@ Estrategia A*."
 	  (return-from profundidade-iterativa solucao))))))
 
 	  
-
-
-(defun backtrack(problema)
-)	 
-(defun select-value(problema)
-) 
-
 (defun ILDSProbe(problema estado k rDepth prof-actual profundidade-maxima)
     (let* 	((objectivo? (problema-objectivo? problema)))
 	
@@ -845,62 +838,94 @@ Estrategia A*."
 	(min_heur 0)
 	(heur_actual 0)
 	(heur (problema-heuristica problema)))
-	(print 'ESTADO)
-	(print estado)
-	(print 'OBJECTIVO)
-	(print (funcall objectivo? estado))
-	(print 'SUCS)
-	(print sucs)
 	  (	let ((i 0))
 	(dolist (suc sucs)
  
 		(cond ((= i 0)
 				     (setf min_heur (funcall heur suc))
 					 (setf melhor_suc_h suc)
-					 (print 'MIN_HEUR)
-					 (print min_heur)
 					 (setf i (+ i 1))
 					 )
 				  (t
 			      (setf heur_actual (funcall heur suc))
-				  (print 'INDEX)
-				  (print i)
-				  (print 'HEUR-ACTUAL)
-				  (print heur_actual)
 				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
 				  (setf i (+ i 1))
 	))))
-	(print 'MELHOR_SUC )
-	(print melhor_suc_h)
 	(remove melhor_suc_h sucs)
 	(when(> rDepth k) (return-from procura-ILDSProb (ILDSProbe problema melhor_suc_h k (- rDepth 1) (+ prof-actual 1) profundidade-maxima)))
 	(when(> k 0) 
-	(dolist (suc sucs)
-		(return-from procura-ILDSProb (ILDSProbe problema suc (- k 1) (- rDepth 1) (+ prof-actual 1) profundidade-maxima))
-	)		   
+		(return-from procura-ILDSProb (ILDSProbe problema (car sucs) (- k 1) (- rDepth 1) (+ prof-actual 1) profundidade-maxima))
+			   
 )))))))
 
-
+;;;
+;;;            Improved Limited-Discrepancy Search
+;;;
 (defun ILDS (problema profundidade-maxima)
- "Algoritmo de procura em profundidade primeiro."
-  (let* ((estado= (problema-estado= problema))
-	(prob (problema-estado-inicial problema))
+  (let* ((prob (problema-estado-inicial problema))
 	(n (list-length (csp-variables prob))))
-    (print 'NUMBER)
-	(print n)
-	
 	(block procura-ILDS
 	(loop for k from 0 to n
 				do (
-				let((rDepth n) (result NIL))
+				let((rDepth n))
 				(return-from procura-ILDS (ILDSProbe problema (problema-estado-inicial problema) k rDepth 0 profundidade-maxima))
-				
 				)
 	
-    ))
-	  
-	  )			
-)
+))))
+
+(defun DDSProbe(problema estado k prof-actual profundidade-maxima)
+	(let* ((objectivo? (problema-objectivo? problema)))
+	(block procura-DDSProbe
+	(cond ((funcall objectivo? estado) (list estado))
+		  ((= prof-actual profundidade-maxima) nil)
+	 (t
+	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
+	(min_heur 0)
+	(heur_actual 0)
+	(heur (problema-heuristica problema)))
+	  (	let ((i 0))
+	(dolist (suc sucs)
+ 
+		(cond ((= i 0)
+				     (setf min_heur (funcall heur suc))
+					 (setf melhor_suc_h suc)
+					 (setf i (+ i 1))
+					 )
+				  (t
+			      (setf heur_actual (funcall heur suc))
+				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
+				  (setf i (+ i 1))
+	))))
+	(remove melhor_suc_h sucs)
+	(when(= k 0) (return-from procura-DDSProbe (DDSProbe problema melhor_suc_h 0 (+ prof-actual 1) profundidade-maxima)))
+	(when(= k 1) 
+	(dolist (suc sucs)
+		(return-from procura-DDSProbe (DDSProbe problema suc 0 (+ prof-actual 1) profundidade-maxima))
+	))
+	(when(> k 1) 
+	(let(( solucao (DDSProbe problema melhor_suc_h (- k 1) (+ prof-actual 1) profundidade-maxima)))
+	(when solucao 
+		(cond ((funcall objectivo? estado) (return-from  procura-DDSProbe solucao))
+		
+		(t
+		;;; se solucao nao for um estado objetivo, tentar ir contra a heuristica 
+			(return-from procura-DDSProbe (DDSProbe problema (car sucs) 0 (+ prof-actual 1) profundidade-maxima))
+		
+		))
+	
+	)))))
+))))
+
+;;;
+;;;             Depth-Bounded Discrepancy Search
+;;;
+(defun DDS (problema profundidade-maxima)
+  (let* ((prob (problema-estado-inicial problema))
+	(n (list-length (csp-variables prob))))
+	(block procura-DDS
+	(loop for k from 0 to n
+				do (return-from procura-DDS (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)		
+)))))
 
 (defun random-from-range (start end)
   (+ start (random (+ 1 (- end start)))))
@@ -917,13 +942,6 @@ Estrategia A*."
 	     
 	     (procura-aleatoria (estado caminho prof-actual)
 	       (block procura-aleatoria
-		 ;; base da recursao:
-		 ;; 1. quando comecamos a repetir estados pelos quais ja
-		 ;;    passamos no caminho que esta a ser percorrido
-		 ;;    (para evitar caminhos infinitos)
-		 ;; 2. quando atingimos o objectivo
-		 ;; 3. quando ultrapassamos a profundidade limite ate
-		 ;;    onde se deve efectuar a procura
 		 (cond ((funcall objectivo? estado) (list estado))
 		       ((= prof-actual profundidade-maxima) nil)
 		       ((esta-no-caminho? estado caminho) nil)
@@ -936,8 +954,6 @@ Estrategia A*."
 				(print idx)
 				(setf suc (elt sucs idx))
 
-			  ;; avancamos recursivamente, em profundidade,
-			  ;; para cada sucessor
 			  (let ((solucao (procura-aleatoria suc 
 						       (cons estado caminho)
 						       (1+ prof-actual))))
@@ -987,6 +1003,8 @@ Estrategia A*."
 		  (ida* problema :espaco-em-arvore? espaco-em-arvore?))
 		 ((string-equal tipo-procura "ILDS")
 		  (ILDS problema profundidade-maxima))
+		   ((string-equal tipo-procura "DDS")
+		  (DDS problema profundidade-maxima))
 		 ((string-equal tipo-procura "sondagem.iterativa")
 		  (sondagem.iterativa problema profundidade-maxima)))))
 
