@@ -834,105 +834,73 @@ Estrategia A*."
 (defun select-value(problema)
 ) 
 
-(defun ILDSProbe(problema estado k rDepth)
-    (let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
+(defun ILDSProbe(problema estado k rDepth prof-actual profundidade-maxima)
+    (let* 	((objectivo? (problema-objectivo? problema)))
+	
+	(block procura-ILDSProb
+	(cond ((funcall objectivo? estado) (list estado))
+		  ((= prof-actual profundidade-maxima) nil)
+	 (t
+	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
 	(min_heur 0)
 	(heur_actual 0)
 	(heur (problema-heuristica problema)))
+	(print 'ESTADO)
+	(print estado)
+	(print 'OBJECTIVO)
+	(print (funcall objectivo? estado))
+	(print 'SUCS)
+	(print sucs)
+	  (	let ((i 0))
 	(dolist (suc sucs)
-   (let ((i 0))
-				  (cond ((= i 0)
+ 
+		(cond ((= i 0)
 				     (setf min_heur (funcall heur suc))
 					 (setf melhor_suc_h suc)
+					 (print 'MIN_HEUR)
+					 (print min_heur)
+					 (setf i (+ i 1))
 					 )
 				  (t
 			      (setf heur_actual (funcall heur suc))
+				  (print 'INDEX)
+				  (print i)
+				  (print 'HEUR-ACTUAL)
+				  (print heur_actual)
 				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
-				  (setq i (+ i 1))
+				  (setf i (+ i 1))
 	))))
+	(print 'MELHOR_SUC )
+	(print melhor_suc_h)
 	(remove melhor_suc_h sucs)
-	(when(> rDepth k) (ILDSProbe problema melhor_suc_h k (- rDepth 1)))
+	(when(> rDepth k) (return-from procura-ILDSProb (ILDSProbe problema melhor_suc_h k (- rDepth 1) (+ prof-actual 1) profundidade-maxima)))
 	(when(> k 0) 
 	(dolist (suc sucs)
-		(ILDSProbe problema suc (- k 1) (- rDepth 1))
+		(return-from procura-ILDSProb (ILDSProbe problema suc (- k 1) (- rDepth 1) (+ prof-actual 1) profundidade-maxima))
 	)		   
-)))
+)))))))
 
 
 (defun ILDS (problema profundidade-maxima)
  "Algoritmo de procura em profundidade primeiro."
-  (let ((estado= (problema-estado= problema))
-	(objectivo? (problema-objectivo? problema))
-	(heur (problema-heuristica problema))
-	(discrepancia 0)
-	(melhor_suc_h NIL)
-	(min_heur 0)
-	(heur_actual 0)
-	(n 0))
-
-    (labels ((esta-no-caminho? (estado caminho)
-	       (member estado caminho :test estado=))
-	     
-	     (procura-discrepancia (estado caminho prof-actual)
-	       (block procura-discrepancia
-		 ;; base da recursao:
-		 ;; 1. quando comecamos a repetir estados pelos quais ja
-		 ;;    passamos no caminho que esta a ser percorrido
-		 ;;    (para evitar caminhos infinitos)
-		 ;; 2. quando atingimos o objectivo
-		 ;; 3. quando ultrapassamos a profundidade limite ate
-		 ;;    onde se deve efectuar a procura
-		 (cond ((funcall objectivo? estado) (list estado))
-		       ((= prof-actual profundidade-maxima) nil)
-		       ((esta-no-caminho? estado caminho) nil)
-		       (t 
-			(dolist (suc (problema-gera-sucessores problema
-							       estado))
-			  ;; avancamos recursivamente, em profundidade,
-			  ;; para cada sucessor
-			
-			  (cond (( = discrepancia 0)
-			    (let ((i 0))
-				  (cond ((= i 0)
-				     (setf min_heur (funcall heur suc))
-					 (setf melhor_suc_h suc)
-					 )
-				  (t
-			      (setf heur_actual (funcall heur suc))
-				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
-				  (setq i (+ i 1))
-				  )
-				  ))
-				  (print 'min_heur)
-				  (print min_heur)
-				  (print 'prof-actual)
-				  (print prof-actual)
-				  (setq n prof-actual)
-				  (let ((solucao (procura-discrepancia melhor_suc_h 
-								   (cons estado caminho)
-								   (1+ prof-actual))))
-					
-					(when solucao
-					  (return-from procura-discrepancia (cons estado
-									  solucao))))))))))))
-			
-      
-      (procura-discrepancia (problema-estado-inicial problema) nil 0)
-	  
-	  
-	   	(loop for k from 1 to n
+  (let* ((estado= (problema-estado= problema))
+	(prob (problema-estado-inicial problema))
+	(n (list-length (csp-variables prob))))
+    (print 'NUMBER)
+	(print n)
+	
+	(block procura-ILDS
+	(loop for k from 0 to n
 				do (
 				let((rDepth n) (result NIL))
-				(setf result (ILDSProbe problema (problema-estado-inicial problema) k rDepth))
+				(return-from procura-ILDS (ILDSProbe problema (problema-estado-inicial problema) k rDepth 0 profundidade-maxima))
 				
 				)
 	
-    )
+    ))
 	  
-	  )
-	  
-			
-))
+	  )			
+)
 
 (defun random-from-range (start end)
   (+ start (random (+ 1 (- end start)))))
