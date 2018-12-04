@@ -1003,7 +1003,7 @@ Estrategia A*."
 		  (ida* problema :espaco-em-arvore? espaco-em-arvore?))
 		 ((string-equal tipo-procura "ILDS")
 		  (ILDS problema profundidade-maxima))
-		   ((string-equal tipo-procura "DDS")
+		   ((string-equal tipo-procura "abordagem.alternativa")
 		  (DDS problema profundidade-maxima))
 		 ((string-equal tipo-procura "sondagem.iterativa")
 		  (sondagem.iterativa problema profundidade-maxima)))))

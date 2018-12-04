@@ -115,7 +115,6 @@
 				)
 			  )
 		)
-		(print children)
 		children
 	)
 )
@@ -195,7 +194,6 @@
   (let ((csp NIL) (problema NIL))
     (setf csp (csp-inicial tarefas))
     (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_1 :estado= #'estado   ))
-    (print problema)
     (procura problema tipo-procura :espaco-em-arvore? T)
 ))
 
