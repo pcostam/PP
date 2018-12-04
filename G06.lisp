@@ -54,7 +54,8 @@
 
 
 (defun custo(estado)
-  (csp-cost estado) 
+  (cond ((objectivo estado) 0)
+		(t 1))
 )
 
 
@@ -187,7 +188,7 @@
 )
 
 (defun heuristica_2(estado)
-  (list-length (csp-assignments estado))
+  (csp-cost estado)
 )
 
 (defun faz-afectacao(tarefas tipo-procura)
@@ -196,19 +197,3 @@
     (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_1 :estado= #'estado   ))
     (procura problema tipo-procura :espaco-em-arvore? T)
 ))
-
-
-
-(setf x '((L2 L1 1 25) (L1 L2 34 60) (L5 L1 408 447) (L1 L1 448 551) (L1 L1 474 565)))
-(setf a (csp-inicial '((L2 L1 1 25) (L1 L2 34 60) (L5 L1 408 447) (L1 L1 448 551) (L1 L1 474 565))))
-(setf b (successors a))
-(setf c (nth 0 b))
-(setf d (successors c))
-(setf c (nth 0 d))
-(setf d (successors c))
-(setf c (nth 0 d))
-(setf d (successors c))
-(setf c (nth 0 d))
-(setf d (successors c))
-(setf o_state (make-csp :variables () :assignments '(((L2 L1 1 25) (L1 L2 34 60)) ((L5 L1 408 447) (L1 L1 448 551)) ((L1 L1 474
-565)))))
