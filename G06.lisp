@@ -1,3 +1,4 @@
+(require 'procura)
 (in-package :user)
 
 (defun qsort (L)
@@ -183,7 +184,8 @@
 )
 
 (defun heuristica_1(estado)
-  (list-length (csp-variables estado))
+	(print (log 10 (+ 1 (csp-cost estado))))
+  (* (list-length (csp-variables estado)) (expt 10 (log 10 (+ 1.0 (csp-cost estado)))))
 )
 
 (defun heuristica_2(estado)
@@ -242,40 +244,41 @@
 	)		
 )
 
-(defun faz-afectacao(tarefas tipo-procura)
-  (let ((csp NIL) (problema NIL) (solucao NIL))
-    (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_2 :estado= #'estado   ))
-    
-		
-	(cond ((string-equal tipo-procura "ILDS")
-		(setf solucao (ILDS problema profundidade-maxima)))
-		((string-equal tipo-procura "abordagem.alternativa")
-		(setf solucao (DDS problema profundidade-maxima)))
-		((string-equal tipo-procura "sondagem.iterativa")
-		(setf solucao (sondagem.iterativa problema profundidade-maxima)))
-		(t (setf solucao (procura problema tipo-procura :espaco-em-arvore? T)))
-	)
-	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
-		(csp-assignments goal_state)
-		(print "GOAL STATE: ")
-		(print goal_state)
-		(print "")
-		(print "TIME SPENT (s): ")
-		(print time_spent)
-		(print "")
-		(print "EXPANDED NODES: ")
-		(print nos_exp)
-		(print "")
-		(print "GENERATED NODES: ")
-		(print nos_ger)
-	)
-))
-
 
 ;;;
 ;;;            Improved Limited-Discrepancy Search
 ;;;
+(defun ILDSProbe(problema estado k rDepth prof-actual profundidade-maxima)
+    (let* 	((objectivo? (problema-objectivo? problema)))
+	
+	(block procura-ILDSProb
+	(cond ((funcall objectivo? estado) (list estado))
+		  ((= prof-actual profundidade-maxima) nil)
+	 (t
+	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
+	(min_heur 0)
+	(heur_actual 0)
+	(heur (problema-heuristica problema)))
+	  (	let ((i 0))
+	(dolist (suc sucs)
+ 
+		(cond ((= i 0)
+				     (setf min_heur (funcall heur suc))
+					 (setf melhor_suc_h suc)
+					 (setf i (+ i 1))
+					 )
+				  (t
+			      (setf heur_actual (funcall heur suc))
+				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
+				  (setf i (+ i 1))
+	))))
+	(remove melhor_suc_h sucs)
+	(when(> rDepth k) (return-from procura-ILDSProb (ILDSProbe problema melhor_suc_h k (- rDepth 1) (+ prof-actual 1) profundidade-maxima)))
+	(when(> k 0) 
+		(return-from procura-ILDSProb (ILDSProbe problema (car sucs) (- k 1) (- rDepth 1) (+ prof-actual 1) profundidade-maxima))
+			   
+)))))))
+
 (defun ILDS (problema profundidade-maxima)
   (let* ((prob (problema-estado-inicial problema))
 	(n (list-length (csp-variables prob))))
@@ -288,6 +291,9 @@
 	
 ))))
 
+;;;
+;;;             Depth-Bounded Discrepancy Search
+;;;
 (defun DDSProbe(problema estado k prof-actual profundidade-maxima)
 	(let* ((objectivo? (problema-objectivo? problema)))
 	(block procura-DDSProbe
@@ -331,9 +337,6 @@
 	)))))
 ))))
 
-;;;
-;;;             Depth-Bounded Discrepancy Search
-;;;
 (defun DDS (problema profundidade-maxima)
   (let* ((prob (problema-estado-inicial problema))
 	(n (list-length (csp-variables prob))))
@@ -376,3 +379,56 @@
 							      solucao))))))))))
       
       (procura-aleatoria (problema-estado-inicial problema) nil 0))))
+
+
+(defun procura-alternativas (problema tipo-procura
+		&key (profundidade-maxima most-positive-fixnum))
+
+  (flet ((faz-a-procura (problema tipo-procura 
+			 profundidade-maxima)
+	   (cond ((string-equal tipo-procura "ILDS")
+				(ILDS problema profundidade-maxima))
+			 ((string-equal tipo-procura "abordagem.alternativa")
+				(DDS problema profundidade-maxima))
+			 ((string-equal tipo-procura "sondagem.iterativa")
+				(sondagem.iterativa problema profundidade-maxima)))))
+
+    (let ((*nos-gerados* 0)
+	  (*nos-expandidos* 0)
+	  (tempo-inicio (get-internal-run-time)))
+      (let ((solucao (faz-a-procura problema tipo-procura
+				    profundidade-maxima)))
+	(list solucao 
+	      (- (get-internal-run-time) tempo-inicio)
+	      *nos-expandidos*
+	      *nos-gerados*)))))
+
+(defun faz-afectacao(tarefas tipo-procura &key (profundidade-maxima most-positive-fixnum))
+  (let ((csp NIL) (problema NIL) (solucao NIL))
+    (setf csp (csp-inicial tarefas))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_1 :estado= #'estado   ))
+    
+		
+	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
+				(setf solucao (procura-alternativas problema tipo-procura))
+		  )
+		  (t
+				(setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
+		  )
+	)
+
+	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
+		(csp-assignments goal_state)
+		(print "GOAL STATE: ")
+		(print goal_state)
+		(print "")
+		(print "TIME SPENT (s): ")
+		(print time_spent)
+		(print "")
+		(print "EXPANDED NODES: ")
+		(print nos_exp)
+		(print "")
+		(print "GENERATED NODES: ")
+		(print nos_ger)
+	)
+))
