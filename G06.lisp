@@ -58,7 +58,7 @@
 
 
 (defun custo(estado)
-  (csp-cost estado)
+	(csp-cost estado)
 )
 
 
@@ -172,7 +172,7 @@
 		)
 		(cond ( (> time-count 480) (setf valid nil) ) )
    
-      (cond ((equal valid T) (setf (csp-cost state) (+ (csp-cost state) time-count))))
+      (cond ((equal valid T) (setf (csp-cost state) (max (+ (csp-cost state) time-count) 360))))
    
    valid
    
@@ -193,7 +193,7 @@
 )
 
 (defun heuristica_1(estado)
-  (list-length (csp-variables estado))
+  (* (list-length (csp-variables estado)) 1000)
 )
 
 (defun heuristica_2(estado)
@@ -253,15 +253,32 @@
 )
 
 (defun faz-afectacao(tarefas tipo-procura)
-  (let ((csp NIL) (problema NIL))
+  (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_1 :estado= #'estado   ))
-    (let ((solucao (decide-procura problema tipo-procura :espaco-em-arvore? T)))
-	(when solucao 
-		(csp-assignments (elt (last (elt solucao 0)) 0))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_2 :estado= #'estado   ))
+    
 		
+	(cond ((string-equal tipo-procura "ILDS")
+		(setf solucao (ILDS problema profundidade-maxima)))
+		((string-equal tipo-procura "abordagem.alternativa")
+		(setf solucao (DDS problema profundidade-maxima)))
+		((string-equal tipo-procura "sondagem.iterativa")
+		(setf solucao (sondagem.iterativa problema profundidade-maxima)))
+		(t (setf solucao (procura problema tipo-procura :espaco-em-arvore? T)))
 	)
-	
+	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
+		(csp-assignments goal_state)
+		(print "GOAL STATE: ")
+		(print goal_state)
+		(print "")
+		(print "TIME SPENT (s): ")
+		(print time_spent)
+		(print "")
+		(print "EXPANDED NODES: ")
+		(print nos_exp)
+		(print "")
+		(print "GENERATED NODES: ")
+		(print nos_ger)
 	)
 ))
 
@@ -369,54 +386,3 @@
 							      solucao))))))))))
       
       (procura-aleatoria (problema-estado-inicial problema) nil 0))))
-	
-      
-
-	  
-	  
-(defun decide-procura (problema tipo-procura
-		&key (profundidade-maxima most-positive-fixnum)
-		     (espaco-em-arvore? nil))
-  "Dado um problema e um tipo de procura devolve uma lista com: a
-  solucao para o problema (a lista de estados desde o estado inicial
-  ate' ao estado final), ou nil caso nao encontre a solucao; tempo
-  gasto na procura (em internal-time-units); numero de nos expandidos;
-  numero de nos gerados."
-
-  (flet ((faz-a-procura (problema tipo-procura 
-			 profundidade-maxima espaco-em-arvore?)
-	   ;; Usamos cond em vez de case porque nao sabemos de que
-	   ;; package veem os simbolos (o string-equal funciona com o
-	   ;; symbol-name do simbolo e e' "case-insensitive")
-	   
-	   ;; Actualmente, apenas a procura em largura, o A* e o IDA*
-	   ;; estao a aproveitar a informacao do espaco de estados ser
-	   ;; uma arvore
-	   (cond ((string-equal tipo-procura "largura")
-		  (largura-primeiro problema 
-				    :espaco-em-arvore? espaco-em-arvore?))
-		 ((string-equal tipo-procura "profundidade")
-		  (profundidade-primeiro problema profundidade-maxima))
-		 ((string-equal tipo-procura "profundidade-iterativa")
-		  (profundidade-iterativa problema profundidade-maxima))
-		 ((string-equal tipo-procura "a*")
-		  (a* problema :espaco-em-arvore? espaco-em-arvore?))
-		 ((string-equal tipo-procura "ida*")
-		  (ida* problema :espaco-em-arvore? espaco-em-arvore?))
-		 ((string-equal tipo-procura "ILDS")
-		  (ILDS problema profundidade-maxima))
-		   ((string-equal tipo-procura "abordagem.alternativa")
-		  (DDS problema profundidade-maxima))
-		 ((string-equal tipo-procura "sondagem.iterativa")
-		  (sondagem.iterativa problema profundidade-maxima)))))
-
-    (let ((*nos-gerados* 0)
-	  (*nos-expandidos* 0)
-	  (tempo-inicio (get-internal-run-time)))
-      (let ((solucao (faz-a-procura problema tipo-procura
-				    profundidade-maxima
-				    espaco-em-arvore?)))
-	(list solucao 
-	      (- (get-internal-run-time) tempo-inicio)
-	      *nos-expandidos*
-	      *nos-gerados*)))))
