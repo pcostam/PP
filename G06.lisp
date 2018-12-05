@@ -184,8 +184,11 @@
 )
 
 (defun heuristica_1(estado)
-	(print (log 10 (+ 1 (csp-cost estado))))
-  (* (list-length (csp-variables estado)) (expt 10 (log 10 (+ 1.0 (csp-cost estado)))))
+	(cond ((< (csp-cost estado) 10) (setf r (list-length (csp-variables estado))))
+		  (t (setf r (* (list-length (csp-variables estado)) (expt 10 (log 10 (csp-cost estado))))))
+	)
+	(print r)
+	r
 )
 
 (defun heuristica_2(estado)
