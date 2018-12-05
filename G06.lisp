@@ -28,6 +28,8 @@
   no-service-counter
   shift-counter
   cost
+  var_total
+  new_shift
  )
 
 (defun csp-inicial(problema)
@@ -38,7 +40,9 @@
             :assignments nil
 			:no-service-counter 0
             :shift-counter 0
-            :cost 0)))
+            :cost 0
+			:var_total (list-length problema)
+			:new_shift 0)))
                  
     ini)
 )
@@ -54,8 +58,7 @@
 
 
 (defun custo(estado)
-  (cond ((objectivo estado) 0)
-		(t 1))
+  (csp-cost estado)
 )
 
 
@@ -77,8 +80,10 @@
 				(let* ((new_state (make-csp :variables (remove task (copy-list vars))
 										    :assignments (list (list (copy-list task)))
 											:no-service-counter 0
-                                :shift-counter 1
-                                :cost (csp-cost state)))
+											:shift-counter 1
+											:cost (csp-cost state)
+											:var_total (csp-var_total state)
+											:new_shift 1))
 					   (valid (constrictions new_state))
 					  )
 
@@ -93,8 +98,10 @@
 					(let* ((new_state (make-csp :variables (remove task (copy-list vars))
 												:assignments new_shifts
 												:no-service-counter 0
-                                 :shift-counter (csp-shift-counter state)
-                                 :cost (csp-cost state)))
+												:shift-counter (csp-shift-counter state)
+												:cost (csp-cost state)
+												:var_total (csp-var_total state)
+												:new_shift 0))
 						   (valid (constrictions new_state))
 						  )
 						(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -106,8 +113,10 @@
 					   (new_state (make-csp :variables (remove task (copy-list vars))
 											:assignments new_shifts
 											:no-service-counter 0
-                             :shift-counter (+ (csp-shift-counter state) 1)
-                             :cost (csp-cost state)))
+											:shift-counter (+ (csp-shift-counter state) 1)
+											:cost (csp-cost state)
+											:var_total (csp-var_total state)
+											:new_shift 1))
 					   (valid (constrictions new_state))
 					  )
 					(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -184,11 +193,63 @@
 )
 
 (defun heuristica_1(estado)
-  (csp-no-service-counter estado)
+  (list-length (csp-variables estado))
 )
 
 (defun heuristica_2(estado)
-  (csp-cost estado)
+  (* (- (list-length (csp-variables estado)) (csp-shift-counter estado)) (csp-new_shift estado))
+)
+
+(defun heuristica_3(estado)
+  (setf a (+ (list-length (csp-variables estado)) (* (csp-shift-counter estado) (csp-new_shift estado))))
+  (print a)
+  a
+)
+
+(defun heuristica_4(estado)
+  (setf a (* (csp-shift-counter estado) (list-length (csp-variables estado))))
+  (print a)
+  a
+)
+
+(defun heuristica_5(estado)
+	(let ((time 0)) 
+	(dolist (shift (csp-assignments estado))
+		(let ((time_shift 0))
+		(dolist (tarefa shift)
+			(setq time_shift (+ time_shift (duracao_tarefa tarefa)))
+		)
+		(setq time (+ time (- 480 time_shift)))
+	)
+
+	)
+		time
+))
+
+(defun duracao_tarefa(tarefa)
+  (let ((t_end 0) (t_init 0) (t_tarefa 0))
+  (setq t_end (elt tarefa 3))
+  (setq t_init (elt tarefa 2))
+  (setq t_tarefa (- t_end t_init))
+  t_tarefa
+  )
+)
+
+(defun heuristica_6(estado)
+	(let ((ideal 0) (real 0) (res 0))
+	(dolist (shift (csp-assignments estado))
+		
+			(dolist (tarefa shift)
+				(setq ideal (+ ideal (duracao_tarefa tarefa)))
+				
+			)
+				
+
+		
+	)
+	(setq real (custo estado))
+	(setq res (- real ideal))
+	)		
 )
 
 (defun faz-afectacao(tarefas tipo-procura)
