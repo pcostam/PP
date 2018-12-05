@@ -29,7 +29,7 @@
   no-service-counter
   shift-counter
   cost
-  var_total
+  max-width
   new_shift
  )
 
@@ -42,14 +42,14 @@
 			:no-service-counter 0
             :shift-counter 0
             :cost 0
-			:var_total (list-length problema)
+			:max-width (list-length problema)
 			:new_shift 0)))
                  
     ini)
 )
 
 (defun custo(estado)
-	(csp-cost estado)
+	1
 )
 
 
@@ -73,7 +73,7 @@
 											:no-service-counter 0
 											:shift-counter 1
 											:cost (csp-cost state)
-											:var_total (csp-var_total state)
+											:max-width (csp-max-width state)
 											:new_shift 1))
 					   (valid (constrictions new_state))
 					  )
@@ -91,7 +91,7 @@
 												:no-service-counter 0
 												:shift-counter (csp-shift-counter state)
 												:cost (csp-cost state)
-												:var_total (csp-var_total state)
+												:max-width (csp-max-width state)
 												:new_shift 0))
 						   (valid (constrictions new_state))
 						  )
@@ -106,7 +106,7 @@
 											:no-service-counter 0
 											:shift-counter (+ (csp-shift-counter state) 1)
 											:cost (csp-cost state)
-											:var_total (csp-var_total state)
+											:max-width (csp-max-width state)
 											:new_shift 1))
 					   (valid (constrictions new_state))
 					  )
@@ -184,11 +184,12 @@
 )
 
 (defun heuristica_1(estado)
-	(cond ((< (csp-cost estado) 10) (setf r (list-length (csp-variables estado))))
-		  (t (setf r (* (list-length (csp-variables estado)) (expt 10 (log 10 (csp-cost estado))))))
+	(cond ((< (csp-cost estado) 10) (setf this (list-length (csp-variables estado))))
+		  ((> (list-length (csp-variables estado)) 1) (setf this (- (list-length (csp-variables estado)) (csp-cost estado))))
+		  (t (setf this (* (list-length (csp-variables estado)) (expt 10 (log 10 (csp-cost estado))))))
 	)
-	(print r)
-	r
+	(print (+ this (custo estado)))
+	this
 )
 
 (defun heuristica_2(estado)
@@ -214,10 +215,11 @@
 		(dolist (tarefa shift)
 			(setq time_shift (+ time_shift (duracao_tarefa tarefa)))
 		)
-		(setq time (+ time (- 480 time_shift)))
+		(setq time (+ time (- 8 time_shift)))
 	)
 
 	)
+		(print time)
 		time
 ))
 
@@ -247,6 +249,31 @@
 	)		
 )
 
+(defun heuristica_7(estado)
+	(cond ((< (csp-cost estado) 10) (list-length (csp-variables estado)))
+		  (t (* (list-length (csp-variables estado)) (expt 10 (log 10 (csp-cost estado))) (random 1000)))
+	)
+)
+
+(defun heuristica_8(estado)
+	(print (+ (list-length (csp-variables estado)) (custo estado)))
+	(list-length (csp-variables estado))
+)
+
+(defun heuristica_9(estado)
+	(cond ((> (list-length (csp-variables estado)) (* 0.75 (csp-max-width estado)))
+			(setf sigh (csp-cost estado)) )
+		  (t (setf sigh (list-length (csp-variables estado))))
+	)
+	(print sigh)
+	sigh
+)
+
+(defun heuristica_10(estado)
+	(setf this (* (csp-cost estado) (list-length (csp-variables estado))))
+	(print this)
+	this
+)
 
 ;;;
 ;;;            Improved Limited-Discrepancy Search
@@ -409,7 +436,7 @@
 (defun faz-afectacao(tarefas tipo-procura &key (profundidade-maxima most-positive-fixnum))
   (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_1 :estado= #'estado   ))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_10 :estado= #'estado   ))
     
 		
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
