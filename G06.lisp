@@ -256,5 +256,167 @@
   (let ((csp NIL) (problema NIL))
     (setf csp (csp-inicial tarefas))
     (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_1 :estado= #'estado   ))
-    (procura problema tipo-procura :espaco-em-arvore? T)
+    (let ((solucao (decide-procura problema tipo-procura :espaco-em-arvore? T)))
+	(when solucao 
+		(csp-assignments (elt (last (elt solucao 0)) 0))
+		
+	)
+	
+	)
 ))
+
+
+;;;
+;;;            Improved Limited-Discrepancy Search
+;;;
+(defun ILDS (problema profundidade-maxima)
+  (let* ((prob (problema-estado-inicial problema))
+	(n (list-length (csp-variables prob))))
+	(block procura-ILDS
+	(loop for k from 0 to n
+				do (
+				let((rDepth n))
+				(return-from procura-ILDS (ILDSProbe problema (problema-estado-inicial problema) k rDepth 0 profundidade-maxima))
+				)
+	
+))))
+
+(defun DDSProbe(problema estado k prof-actual profundidade-maxima)
+	(let* ((objectivo? (problema-objectivo? problema)))
+	(block procura-DDSProbe
+	(cond ((funcall objectivo? estado) (list estado))
+		  ((= prof-actual profundidade-maxima) nil)
+	 (t
+	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
+	(min_heur 0)
+	(heur_actual 0)
+	(heur (problema-heuristica problema)))
+	  (	let ((i 0))
+	(dolist (suc sucs)
+ 
+		(cond ((= i 0)
+				     (setf min_heur (funcall heur suc))
+					 (setf melhor_suc_h suc)
+					 (setf i (+ i 1))
+					 )
+				  (t
+			      (setf heur_actual (funcall heur suc))
+				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
+				  (setf i (+ i 1))
+	))))
+	(remove melhor_suc_h sucs)
+	(when(= k 0) (return-from procura-DDSProbe (DDSProbe problema melhor_suc_h 0 (+ prof-actual 1) profundidade-maxima)))
+	(when(= k 1) 
+	(dolist (suc sucs)
+		(return-from procura-DDSProbe (DDSProbe problema suc 0 (+ prof-actual 1) profundidade-maxima))
+	))
+	(when(> k 1) 
+	(let(( solucao (DDSProbe problema melhor_suc_h (- k 1) (+ prof-actual 1) profundidade-maxima)))
+	(when solucao 
+		(cond ((funcall objectivo? estado) (return-from  procura-DDSProbe solucao))
+		
+		(t
+		;;; se solucao nao for um estado objetivo, tentar ir contra a heuristica 
+			(return-from procura-DDSProbe (DDSProbe problema (car sucs) 0 (+ prof-actual 1) profundidade-maxima))
+		
+		))
+	
+	)))))
+))))
+
+;;;
+;;;             Depth-Bounded Discrepancy Search
+;;;
+(defun DDS (problema profundidade-maxima)
+  (let* ((prob (problema-estado-inicial problema))
+	(n (list-length (csp-variables prob))))
+	(block procura-DDS
+	(loop for k from 0 to n
+				do (return-from procura-DDS (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)		
+)))))
+
+(defun random-from-range (start end)
+  (+ start (random (+ 1 (- end start)))))
+  
+;;;
+;;;              Sondagem iterativa
+;;;
+(defun sondagem.iterativa (problema profundidade-maxima)
+  (let ((estado= (problema-estado= problema)) 
+	(objectivo? (problema-objectivo? problema)))
+
+    (labels ((esta-no-caminho? (estado caminho)
+	       (member estado caminho :test estado=))
+	     
+	     (procura-aleatoria (estado caminho prof-actual)
+	       (block procura-aleatoria
+		 (cond ((funcall objectivo? estado) (list estado))
+		       ((= prof-actual profundidade-maxima) nil)
+		       ((esta-no-caminho? estado caminho) nil)
+		       (t 
+		
+								   
+				(let((sucs (problema-gera-sucessores problema estado))
+				  (idx 0)  (suc NIL))
+				(setf idx (random-from-range 0 (- (list-length sucs) 1)))
+				(setf suc (elt sucs idx))
+
+			  (let ((solucao (procura-aleatoria suc 
+						       (cons estado caminho)
+						       (1+ prof-actual))))
+			    (when solucao
+			      (return-from procura-aleatoria (cons estado
+							      solucao))))))))))
+      
+      (procura-aleatoria (problema-estado-inicial problema) nil 0))))
+	
+      
+
+	  
+	  
+(defun decide-procura (problema tipo-procura
+		&key (profundidade-maxima most-positive-fixnum)
+		     (espaco-em-arvore? nil))
+  "Dado um problema e um tipo de procura devolve uma lista com: a
+  solucao para o problema (a lista de estados desde o estado inicial
+  ate' ao estado final), ou nil caso nao encontre a solucao; tempo
+  gasto na procura (em internal-time-units); numero de nos expandidos;
+  numero de nos gerados."
+
+  (flet ((faz-a-procura (problema tipo-procura 
+			 profundidade-maxima espaco-em-arvore?)
+	   ;; Usamos cond em vez de case porque nao sabemos de que
+	   ;; package veem os simbolos (o string-equal funciona com o
+	   ;; symbol-name do simbolo e e' "case-insensitive")
+	   
+	   ;; Actualmente, apenas a procura em largura, o A* e o IDA*
+	   ;; estao a aproveitar a informacao do espaco de estados ser
+	   ;; uma arvore
+	   (cond ((string-equal tipo-procura "largura")
+		  (largura-primeiro problema 
+				    :espaco-em-arvore? espaco-em-arvore?))
+		 ((string-equal tipo-procura "profundidade")
+		  (profundidade-primeiro problema profundidade-maxima))
+		 ((string-equal tipo-procura "profundidade-iterativa")
+		  (profundidade-iterativa problema profundidade-maxima))
+		 ((string-equal tipo-procura "a*")
+		  (a* problema :espaco-em-arvore? espaco-em-arvore?))
+		 ((string-equal tipo-procura "ida*")
+		  (ida* problema :espaco-em-arvore? espaco-em-arvore?))
+		 ((string-equal tipo-procura "ILDS")
+		  (ILDS problema profundidade-maxima))
+		   ((string-equal tipo-procura "abordagem.alternativa")
+		  (DDS problema profundidade-maxima))
+		 ((string-equal tipo-procura "sondagem.iterativa")
+		  (sondagem.iterativa problema profundidade-maxima)))))
+
+    (let ((*nos-gerados* 0)
+	  (*nos-expandidos* 0)
+	  (tempo-inicio (get-internal-run-time)))
+      (let ((solucao (faz-a-procura problema tipo-procura
+				    profundidade-maxima
+				    espaco-em-arvore?)))
+	(list solucao 
+	      (- (get-internal-run-time) tempo-inicio)
+	      *nos-expandidos*
+	      *nos-gerados*)))))
