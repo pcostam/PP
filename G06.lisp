@@ -47,16 +47,6 @@
     ini)
 )
 
-(defun duracao_tarefa(tarefa)
-  
-  (setq t_end (aref a 0 3))
-  (setq t_init (aref a 0 2))
-  (setq t_tarefa (- t_end t_init))
-  t_tarefa
-      
-)
-
-
 (defun custo(estado)
 	(csp-cost estado)
 )
@@ -193,7 +183,7 @@
 )
 
 (defun heuristica_1(estado)
-  (* (list-length (csp-variables estado)) 1000)
+  (list-length (csp-variables estado))
 )
 
 (defun heuristica_2(estado)
