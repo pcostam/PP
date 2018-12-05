@@ -275,6 +275,10 @@
 	this
 )
 
+(defun heuristica_11(estado)
+	(csp-cost estado)
+)
+
 ;;;
 ;;;            Improved Limited-Discrepancy Search
 ;;;
@@ -436,7 +440,7 @@
 (defun faz-afectacao(tarefas tipo-procura &key (profundidade-maxima most-positive-fixnum))
   (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_10 :estado= #'estado   ))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_9 :estado= #'estado   ))
     
 		
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
