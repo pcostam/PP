@@ -82,7 +82,7 @@
 										    :assignments (list (list (copy-list task)))
 											:no-service-counter 0
 											:shift-counter 1
-											:cost (csp-cost state)
+											:cost 0
 											:max-vars (csp-max-vars state)
 											:new_shift 1
 											:duracao_total (csp-duracao_total state)
@@ -103,7 +103,7 @@
 														:assignments new_shifts
 														:no-service-counter 0
 														:shift-counter (csp-shift-counter state)
-														:cost (csp-cost state)
+														:cost 0
 														:max-vars (csp-max-vars state)
 														:new_shift 0
 														:duracao_total (csp-duracao_total state)
@@ -121,7 +121,7 @@
 											:assignments new_shifts
 											:no-service-counter 0
 											:shift-counter (+ (csp-shift-counter state) 1)
-											:cost (csp-cost state)
+											:cost 0
 											:max-vars (csp-max-vars state)
 											:new_shift 1
 											:duracao_total (csp-duracao_total state)
@@ -139,14 +139,14 @@
 )
 
 ;;; successor generation WITHOUT constraint verification
-(defun successors(state)
+(defun successors_no_res(state)
 	(let ((children nil) (task (nth 0 (csp-variables state))) (vars (csp-variables state)) (shifts (csp-assignments state)))
 		(cond ((eq shifts nil)
 				(let* ((new_state (make-csp :variables (remove task (copy-list vars))
 										    :assignments (list (list (copy-list task)))
 											:no-service-counter 0
 											:shift-counter 1
-											:cost (csp-cost state)
+											:cost 0
 											:max-vars (csp-max-vars state)
 											:new_shift 1
 											:duracao_total (csp-duracao_total state)
@@ -166,7 +166,7 @@
 														:assignments new_shifts
 														:no-service-counter 0
 														:shift-counter (csp-shift-counter state)
-														:cost (csp-cost state)
+														:cost 0
 														:max-vars (csp-max-vars state)
 														:new_shift 0
 														:duracao_total (csp-duracao_total state)
@@ -183,7 +183,7 @@
 											:assignments new_shifts
 											:no-service-counter 0
 											:shift-counter (+ (csp-shift-counter state) 1)
-											:cost (csp-cost state)
+											:cost 0
 											:max-vars (csp-max-vars state)
 											:new_shift 1
 											:duracao_total (csp-duracao_total state)
@@ -429,13 +429,22 @@
   (let* ((prob (problema-estado-inicial problema))
 	(n (list-length (csp-variables prob))))
 	(block procura-ILDS
-	(loop for k from 0 to n
-				do (
-				let((rDepth n))
-				(return-from procura-ILDS (ILDSProbe problema (problema-estado-inicial problema) k rDepth 0 profundidade-maxima))
-				)
+	(loop for k from 0 to n	
+		do
+		(print "K")
+		(print k)
+		(let((solucao (ILDSProbe problema (problema-estado-inicial problema) k n 0 profundidade-maxima)))
+	    (when solucao
+		    (print "teste")
+			(cond ((eq (constrictions (nth 0 solucao) ) NIL) (print "teste2") (setf solucao NIL)))
+			(if (not(eq solucao NIL)) (print "teste3") (return-from procura-ILDS solucao))
+			
+			(print "teste5")
+			)
+				  ) (print "teste4"))))
+)
 	
-))))
+
 
 ;;;
 ;;;             Depth-Bounded Discrepancy Search
@@ -556,7 +565,9 @@
 	(list solucao 
 	      (- (get-internal-run-time) tempo-inicio)
 	      *nos-expandidos*
-	      *nos-gerados*)))))
+	      *nos-gerados*)
+     
+     ))))
 
 (defun faz-afectacao(tarefas tipo-procura &key (profundidade-maxima most-positive-fixnum))
   (let ((csp NIL) (problema NIL) (solucao NIL))
@@ -565,14 +576,9 @@
     
 		
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
-				(setf solucao (procura-alternativas problema tipo-procura))
-		  )
-		  (t
-				(setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
-		  )
-	)
+				(setf solucao (procura-alternativas (cria-problema csp (list #'successors_no_res) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_14 :estado= #'estado   ) tipo-procura))
 
-	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
+		 (let* ((goal_state (nth 0 solucao)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
 		(csp-assignments goal_state)
 		(print "GOAL STATE: ")
 		(print goal_state)
@@ -586,5 +592,27 @@
 		(print "GENERATED NODES: ")
 		(print nos_ger)
 	)
+		  
+		  )
+		  (t
+				(setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
+				(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
+		(csp-assignments goal_state)
+		(print "GOAL STATE: ")
+		(print goal_state)
+		(print "")
+		(print "TIME SPENT (s): ")
+		(print time_spent)
+		(print "")
+		(print "EXPANDED NODES: ")
+		(print nos_exp)
+		(print "")
+		(print "GENERATED NODES: ")
+		(print nos_ger)
+	)
+		  )
+	)
+
+	
   )
 )
