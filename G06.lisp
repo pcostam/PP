@@ -1,4 +1,4 @@
-(require 'procura)
+;;;(require 'procura)
 (in-package :user)
 
 (defun qsort (L)
@@ -31,11 +31,17 @@
   cost
   max-vars
   new_shift
+  duracao_total
+  num_vars
  )
 
 (defun csp-inicial(problema)
   (setf problema (qsort problema))
-
+  (let ((duracao 0))
+  (dolist (tarefa problema)
+	(setq duracao (+ duracao (duracao_tarefa tarefa)))
+  )
+  
   (let ((ini
   (make-csp :variables problema
             :assignments nil
@@ -43,13 +49,17 @@
             :shift-counter 0
             :cost 0
 			:max-vars (list-length problema)
-			:new_shift 0)))
+			:new_shift 0
+			:duracao_total duracao
+			:num_vars 0)))
                  
-    ini)
+    ini))
 )
 
 (defun custo(estado)
-	(csp-cost estado)
+   (print 'CUSTO)
+   (print (csp-cost estado))
+   (csp-cost estado)
 )
 
 
@@ -74,7 +84,9 @@
 											:shift-counter 1
 											:cost (csp-cost state)
 											:max-vars (csp-max-vars state)
-											:new_shift 1))
+											:new_shift 1
+											:duracao_total (csp-duracao_total state)
+											:num_vars (+ (csp-num_vars state) 1)))
 					   (valid (constrictions new_state))
 					  )
 
@@ -93,7 +105,9 @@
 														:shift-counter (csp-shift-counter state)
 														:cost (csp-cost state)
 														:max-vars (csp-max-vars state)
-														:new_shift 0))
+														:new_shift 0
+														:duracao_total (csp-duracao_total state)
+														:num_vars (+ (csp-num_vars state) 1)))
 								   (valid (constrictions new_state))
 								  )
 								(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -109,7 +123,9 @@
 											:shift-counter (+ (csp-shift-counter state) 1)
 											:cost (csp-cost state)
 											:max-vars (csp-max-vars state)
-											:new_shift 1))
+											:new_shift 1
+											:duracao_total (csp-duracao_total state)
+											:num_vars (+ (csp-num_vars state) 1)))
 					   (valid (constrictions new_state))
 					  )
 					(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
@@ -288,6 +304,32 @@
 	1
 )
 
+(defun heuristica_14(estado)
+    (print estado)
+	(let ((ideal 0) (real 0) (res 0))
+	(dolist (shift (csp-assignments estado))
+		
+			(dolist (tarefa shift)
+				(setq ideal (+ ideal (duracao_tarefa tarefa)))
+				
+			)
+				
+
+		
+	)
+	(print 'IDEAL)
+	(print ideal)
+	(print (csp-duracao_total estado))
+	(setq x (- (csp-duracao_total estado) ideal))
+    (print 'HEURISTICA)
+	(print x)
+
+	 x
+	
+	
+	)
+)
+
 ;;;
 ;;;            Improved Limited-Discrepancy Search
 ;;;
@@ -449,7 +491,7 @@
 (defun faz-afectacao(tarefas tipo-procura &key (profundidade-maxima most-positive-fixnum))
   (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_12 :estado= #'estado   ))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_14 :estado= #'estado   ))
     
 		
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
