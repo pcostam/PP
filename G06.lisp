@@ -74,7 +74,7 @@
   (equalp estado_inicial estado_final)
 )
 
-;;; successor generation
+;;; successor generation WITH constraint verification
 (defun successors(state)
 	(let ((children nil) (task (nth 0 (csp-variables state))) (vars (csp-variables state)) (shifts (csp-assignments state)))
 		(cond ((eq shifts nil)
@@ -130,6 +130,67 @@
 					  )
 					(cond ( (and (eq valid T) (eq children nil)) (setf children (list new_state)) )
 						  ( (and (eq valid T) (not (eq children nil))) (nconc children (list new_state)) )
+					)
+				)
+			  )
+		)
+		children
+	)
+)
+
+;;; successor generation WITHOUT constraint verification
+(defun successors(state)
+	(let ((children nil) (task (nth 0 (csp-variables state))) (vars (csp-variables state)) (shifts (csp-assignments state)))
+		(cond ((eq shifts nil)
+				(let* ((new_state (make-csp :variables (remove task (copy-list vars))
+										    :assignments (list (list (copy-list task)))
+											:no-service-counter 0
+											:shift-counter 1
+											:cost (csp-cost state)
+											:max-vars (csp-max-vars state)
+											:new_shift 1
+											:duracao_total (csp-duracao_total state)
+											:num_vars (+ (csp-num_vars state) 1)))
+					  )
+
+					(setf children (list new_state))
+				)
+			  )
+			  (t
+					(dotimes (i (csp-shift-counter state))
+						(let* ((new_shifts (copy-list shifts))
+							   (new_shift (append (nth i new_shifts) (list (copy-list task))))
+							  )
+							(setf (nth i new_shifts) new_shift)
+							(let* ((new_state (make-csp :variables (remove task (copy-list vars))
+														:assignments new_shifts
+														:no-service-counter 0
+														:shift-counter (csp-shift-counter state)
+														:cost (csp-cost state)
+														:max-vars (csp-max-vars state)
+														:new_shift 0
+														:duracao_total (csp-duracao_total state)
+														:num_vars (+ (csp-num_vars state) 1)))
+								  )
+								(cond ( (eq children nil) (setf children (list new_state)) )
+									  ( (not (eq children nil)) (nconc children (list new_state)) )
+								)
+							)
+						)
+					)
+				(let* ((new_shifts (append (copy-list shifts) (list (list(copy-list task)))))
+					   (new_state (make-csp :variables (remove task (copy-list vars))
+											:assignments new_shifts
+											:no-service-counter 0
+											:shift-counter (+ (csp-shift-counter state) 1)
+											:cost (csp-cost state)
+											:max-vars (csp-max-vars state)
+											:new_shift 1
+											:duracao_total (csp-duracao_total state)
+											:num_vars (+ (csp-num_vars state) 1)))
+					  )
+					(cond ( (eq children nil) (setf children (list new_state)) )
+						  ( (not (eq children nil)) (nconc children (list new_state)) )
 					)
 				)
 			  )
@@ -440,7 +501,7 @@
   (let ((estado= (problema-estado= problema)) 
 	(objectivo? (problema-objectivo? problema))
 	(solucao_optima NIL) (custo_optimo 0))
-  (dotimes (n 100000)
+  (dotimes (n 50)
     (labels ((esta-no-caminho? (estado caminho)
 	       (member estado caminho :test estado=))
 	     
@@ -461,10 +522,6 @@
 						       (cons estado caminho)
 						       (1+ prof-actual))))
 			    (when solucao
-				  (print 'SOLUCAO)
-				  (print solucao)
-				  (print 'IDEA)
-				  (print (custo (nth 0 solucao)))
 				  (setq custo_optimo (custo (nth 0 solucao)))
 				  (cond ((eq solucao_optima NIL)(setf solucao_optima solucao))
 				  ((> (custo (nth 0 solucao_optima)) custo_optimo)(setf solucao_optima solucao)))
