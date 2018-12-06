@@ -438,8 +438,9 @@
 ;;;
 (defun sondagem.iterativa (problema profundidade-maxima)
   (let ((estado= (problema-estado= problema)) 
-	(objectivo? (problema-objectivo? problema)))
-
+	(objectivo? (problema-objectivo? problema))
+	(solucao_optima NIL) (custo_optimo 0))
+  (dotimes (n 100000)
     (labels ((esta-no-caminho? (estado caminho)
 	       (member estado caminho :test estado=))
 	     
@@ -460,10 +461,22 @@
 						       (cons estado caminho)
 						       (1+ prof-actual))))
 			    (when solucao
-			      (return-from procura-aleatoria (cons estado
-							      solucao))))))))))
+				  (print 'SOLUCAO)
+				  (print solucao)
+				  (print 'IDEA)
+				  (print (custo (nth 0 solucao)))
+				  (setq custo_optimo (custo (nth 0 solucao)))
+				  (cond ((eq solucao_optima NIL)(setf solucao_optima solucao))
+				  ((> (custo (nth 0 solucao_optima)) custo_optimo)(setf solucao_optima solucao)))
+				 
+				
+				  
+				  ))))))))
       
-      (procura-aleatoria (problema-estado-inicial problema) nil 0))))
+      (procura-aleatoria (problema-estado-inicial problema) nil 0)))
+	  solucao_optima
+  )
+)
 
 
 (defun procura-alternativas (problema tipo-procura
