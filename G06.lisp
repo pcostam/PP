@@ -266,7 +266,6 @@
 		  ((> (list-length (csp-variables estado)) 1) (setf this (- (list-length (csp-variables estado)) (csp-cost estado))))
 		  (t (setf this (* (list-length (csp-variables estado)) (expt 10 (log 10 (csp-cost estado))))))
 	)
-	(print (+ this (custo estado)))
 	this )
 )
 
@@ -297,7 +296,6 @@
 	)
 
 	)
-		(print time)
 		time
 ))
 
@@ -335,8 +333,7 @@
 )
 
 (defun heuristica_8(estado)
-	(print (+ (list-length (csp-variables estado)) (custo estado)))
-	(list-length (csp-variables estado))
+	(+ (list-length (csp-variables estado)) (custo estado))
 )
 
 (defun heuristica_9(estado)
@@ -355,7 +352,6 @@
 )
 
 (defun heuristica_11(estado)
-	(print (csp-cost estado))
 	(csp-cost estado)
 )
 
@@ -363,7 +359,6 @@
 	(cond ((< (csp-cost estado) 10) (setf this (* (csp-shift-counter estado) (csp-new_shift estado))))
 		  (t (* (* (csp-shift-counter estado) (setf this (csp-new_shift estado)) (expo10 (log 10 (csp-cost estado))))))
 	)
-	(print this)
 	this
 )
 
@@ -384,12 +379,7 @@
 				
 			)		
 	)
-	(print 'IDEAL)
-	(print ideal)
-	(print (csp-duracao_total estado))
 	(setq x (- (csp-duracao_total estado) ideal))
-    (print 'HEURISTICA)
-	(print x)
 
 	 x
 	
@@ -399,7 +389,7 @@
 
 (defun heuristica_15(estado)
 	(cond ((< (csp-cost estado) 10) (setf this (list-length (csp-variables estado))))
-		  ((> (list-length (csp-variables estado)) (* 0.02 (csp-max-vars estado))) (setf this (* (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (list-length (csp-variables estado)))))
+		  ((> (list-length (csp-variables estado)) 3) (setf this (* (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (list-length (csp-variables estado)))))
 		  (t (setf this (* (list-length (csp-variables estado)) (expo10 (log 10 (csp-cost estado))))))
 	)
 	this
@@ -407,10 +397,9 @@
 
 (defun heuristica_16(estado)
 	(cond ((< (csp-cost estado) 10) (setf this (csp-no-service-counter estado)))
-		  ((> (list-length (csp-variables estado)) (* 0.02 (csp-max-vars estado))) (setf this (* (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (heuristica_14 estado))))
+		  ((> (list-length (csp-variables estado)) 3) (setf this (* (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (heuristica_14 estado))))
 		  (t (setf this (* (csp-new_shift estado) (list-length (csp-variables estado)) (expo10 (log 10 (csp-cost estado))))))
 	)
-	(print this)
 	this
 )
 
