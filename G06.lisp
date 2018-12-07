@@ -437,11 +437,11 @@
 	    (when solucao
 		    (print "teste")
 			(cond ((eq (constrictions (nth 0 solucao) ) NIL) (print "teste2") (setf solucao NIL)))
-			(if (not(eq solucao NIL)) (print "teste3") (return-from procura-ILDS solucao))
+			(cond ((not(eq solucao NIL)) (print "teste3") (return-from procura-ILDS solucao)))
 			
-			(print "teste5")
+			
 			)
-				  ) (print "teste4"))))
+				  ) (print k) (print "teste4"))))
 )
 	
 
@@ -575,7 +575,7 @@
     (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_14 :estado= #'estado   ))
     
 		
-	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
+	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa"))
 				(setf solucao (procura-alternativas (cria-problema csp (list #'successors_no_res) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_14 :estado= #'estado   ) tipo-procura))
 
 		 (let* ((goal_state (nth 0 solucao)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
@@ -594,6 +594,22 @@
 	)
 		  
 		  )
+		  ((string-equal tipo-procura "sondagem.iterativa")
+		  	(setf solucao (procura-alternativas (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_14 :estado= #'estado   ) tipo-procura))
+				(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
+		(csp-assignments goal_state)
+		(print "GOAL STATE: ")
+		(print goal_state)
+		(print "")
+		(print "TIME SPENT (s): ")
+		(print time_spent)
+		(print "")
+		(print "EXPANDED NODES: ")
+		(print nos_exp)
+		(print "")
+		(print "GENERATED NODES: ")
+		(print nos_ger)
+		  ))
 		  (t
 				(setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
 				(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
