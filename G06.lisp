@@ -617,13 +617,24 @@
 (defun faz-afectacao(tarefas tipo-procura)
   (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_16 :estado= #'estado   ))
-    
-		
+   
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
+				(setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_5 :estado= #'estado   ))
 				(setf solucao (procura-alternativas problema tipo-procura))
+			
 		  )
+		  ((string-equal tipo-procura "a*.melhor.heuristica" )
+		      (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
+			  (setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
+		  )
+		  
+		  ((string-equal tipo-procura "a*.melhor.heuristica.alternativa" )
+		      (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_16 :estado= #'estado   ))
+			  (setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
+		  )
+		  
 		  (t
+		        (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_5 :estado= #'estado   ))
 				(setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
 		  )
 	)
