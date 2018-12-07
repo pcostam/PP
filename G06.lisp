@@ -599,6 +599,8 @@
 				(ILDS problema profundidade-maxima))
 			 ((string-equal tipo-procura "abordagem.alternativa")
 				(DDS problema profundidade-maxima))
+			((or (string-equal tipo-procura "a*.melhor.heuristica.alternativa") (string-equal tipo-procura "a*.melhor.heuristica"))
+			(a* problema :espaco-em-arvore? T))
 			 ((string-equal tipo-procura "sondagem.iterativa")
 				(sondagem.iterativa problema profundidade-maxima)))))
 
@@ -625,12 +627,12 @@
 		  )
 		  ((string-equal tipo-procura "a*.melhor.heuristica" )
 		      (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
-			  (setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
+			  (setf solucao (procura-alternativas problema tipo-procura))
 		  )
 		  
 		  ((string-equal tipo-procura "a*.melhor.heuristica.alternativa" )
 		      (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_16 :estado= #'estado   ))
-			  (setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
+			  (setf solucao (procura-alternativas problema tipo-procura))
 		  )
 		  
 		  (t
