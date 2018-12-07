@@ -619,7 +619,7 @@
     (setf csp (csp-inicial tarefas))
    
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
-				(setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_5 :estado= #'estado   ))
+				(setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
 				(setf solucao (procura-alternativas problema tipo-procura))
 			
 		  )
@@ -634,7 +634,7 @@
 		  )
 		  
 		  (t
-		        (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_5 :estado= #'estado   ))
+		        (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
 				(setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
 		  )
 	)
