@@ -606,7 +606,7 @@
      ))))
 
 (defun faz-afectacao(tarefas tipo-procura)
-  (let ((csp NIL) (problema NIL) (solucao NIL))
+  (let ((csp NIL) (problema NIL) (solucao NIL) (res NIL))
     (setf csp (csp-inicial tarefas))
    
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
@@ -629,10 +629,14 @@
 				(setf solucao (procura problema tipo-procura :espaco-em-arvore? T))
 		  )
 	)
-
+    (cond ((not (equal (nth 0 solucao) NIL))
 	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
 		(print (string (concatenate 'string (write-to-string (csp-cost goal_state)) " " (write-to-string (csp-shift-counter goal_state)) " " (write-to-string time_spent) " " (write-to-string nos_exp) " " (write-to-string nos_ger))))
-		goal_state
+		(setf res (csp-assignments goal_state))
 	)
+	))
+
+   (print res)
+	
   )
 )
