@@ -529,15 +529,11 @@
   (let ((estado= (problema-estado= problema)) 
 	(objectivo? (problema-objectivo? problema))
 	(solucao_optima NIL) (custo_optimo 0))
-  (dotimes (n 50)
-    (labels ((esta-no-caminho? (estado caminho)
-	       (member estado caminho :test estado=))
-	     
+  (dotimes (n 50)     
 	     (procura-aleatoria (estado caminho prof-actual)
 	       (block procura-aleatoria
 		 (cond ((funcall objectivo? estado) (list estado))
 		       ((= prof-actual profundidade-maxima) nil)
-		       ((esta-no-caminho? estado caminho) nil)
 		       (t 
 		
 								   
@@ -560,7 +556,7 @@
 				  
 				  ))))))))
       
-      (procura-aleatoria (problema-estado-inicial problema) nil 0)))
+      (procura-aleatoria (problema-estado-inicial problema) nil 0)
 	  solucao_optima
   )
 )
@@ -593,7 +589,7 @@
 (defun faz-afectacao(tarefas tipo-procura &key (profundidade-maxima most-positive-fixnum))
   (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_14 :estado= #'estado   ))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_12 :estado= #'estado   ))
     
 		
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
