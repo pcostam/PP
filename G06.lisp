@@ -631,12 +631,11 @@
 	)
     (cond ((not (equal (nth 0 solucao) NIL))
 	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
-		(print (string (concatenate 'string (write-to-string (csp-cost goal_state)) " " (write-to-string (csp-shift-counter goal_state)) " " (write-to-string time_spent) " " (write-to-string nos_exp) " " (write-to-string nos_ger))))
 		(setf res (csp-assignments goal_state))
 	)
 	))
 
-   (print res)
+   res
 	
   )
 )
