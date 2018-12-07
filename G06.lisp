@@ -262,12 +262,13 @@
 )
 
 (defun heuristica_1(estado)
+    (let ((this 0))
 	(cond ((< (csp-cost estado) 10) (setf this (list-length (csp-variables estado))))
 		  ((> (list-length (csp-variables estado)) 1) (setf this (- (list-length (csp-variables estado)) (csp-cost estado))))
 		  (t (setf this (* (list-length (csp-variables estado)) (expt 10 (log 10 (csp-cost estado))))))
 	)
 	(print (+ this (custo estado)))
-	this
+	this )
 )
 
 (defun heuristica_2(estado)
@@ -275,15 +276,15 @@
 )
 
 (defun heuristica_3(estado)
+  (let ((a 0))
   (setf a (+ (list-length (csp-variables estado)) (* (csp-shift-counter estado) (csp-new_shift estado))))
-  (print a)
-  a
+  a )
 )
 
 (defun heuristica_4(estado)
+  (let ((a 0))
   (setf a (* (csp-shift-counter estado) (list-length (csp-variables estado))))
-  (print a)
-  a
+  a )
 )
 
 (defun heuristica_5(estado)
@@ -324,6 +325,7 @@
 	)
 	(setq real (custo estado))
 	(setq res (- real ideal))
+	res
 	)		
 )
 
@@ -339,17 +341,18 @@
 )
 
 (defun heuristica_9(estado)
+    (let ((res 0))
 	(cond ((> (list-length (csp-variables estado)) (* 0.75 (csp-max-vars estado)))
-			(setf sigh (csp-cost estado)) )
-		  (t (setf sigh (list-length (csp-variables estado))))
+			(setf res (csp-cost estado)) )
+		  (t (setf res (list-length (csp-variables estado))))
 	)
-	sigh
+	res)
 )
 
 (defun heuristica_10(estado)
+    (let ((this 0))
 	(setf this (* (csp-cost estado) (list-length (csp-variables estado))))
-	(print this)
-	this
+	this)
 )
 
 (defun heuristica_11(estado)
@@ -361,13 +364,9 @@
 	(* (csp-shift-counter estado) (csp-new_shift estado))
 )
 
-(defun heuristica_13(estado)
-	1
-)
-
 (defun heuristica_14(estado)
     (print estado)
-	(let ((ideal 0) (real 0) (res 0))
+	(let ((ideal 0) (x 0))
 	(dolist (shift (csp-assignments estado))
 		
 			(dolist (tarefa shift)
@@ -426,7 +425,7 @@
 )))))))
 
 (defun ILDS (problema profundidade-maxima)
-  (let* ((prob (problema-estado-inicial problema)) (solucao_optima NIL)
+  (let* ((prob (problema-estado-inicial problema)) (solucao_optima NIL) (custo_optimo 0)
 	(n (list-length (csp-variables prob))))
 	
 	(block procura-ILDS
@@ -436,7 +435,7 @@
 	    (when solucao
 			(setq custo_optimo (custo (nth 0 solucao)))
 		    (cond ((eq solucao_optima NIL)(setf solucao_optima solucao))
-		    ((> (custo (nth 0 solucao_optima)) custo_optimo)(setf solucao_optima solucao)))
+		    ((> (custo (nth 0 solucao_optima)) custo_optimo) (setf solucao_optima solucao)))
 				 
 				
 				  
@@ -496,10 +495,9 @@
 ))))
 
 (defun DDS (problema profundidade-maxima)
-  (let* ((prob (problema-estado-inicial problema)) (solucao_optima NIL) 
-	(n (list-length (csp-variables prob))))
+  (let* ((solucao_optima NIL) (custo_optimo 0))
 	(block procura-DDS
-	(loop for k from 0 to 30
+	(loop for k from 0 to 0
 		do
 		(let((solucao (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)))
 	    (when solucao
@@ -529,19 +527,21 @@
   (let ((estado= (problema-estado= problema)) 
 	(objectivo? (problema-objectivo? problema))
 	(solucao_optima NIL) (custo_optimo 0))
-  (dotimes (n 50)     
+  (dotimes (n 100)
+    (labels ((esta-no-caminho? (estado caminho)
+	       (member estado caminho :test estado=))
+	     
 	     (procura-aleatoria (estado caminho prof-actual)
 	       (block procura-aleatoria
 		 (cond ((funcall objectivo? estado) (list estado))
 		       ((= prof-actual profundidade-maxima) nil)
+		       ((esta-no-caminho? estado caminho) nil)
 		       (t 
 		
 								   
 				(let((sucs (problema-gera-sucessores problema estado))
 				  (idx 0)  (suc NIL))
 				(setf idx (random-from-range 0 (- (list-length sucs) 1)))
-				(print "index")
-				(print idx)
 				(setf suc (elt sucs idx))
 
 			  (let ((solucao (procura-aleatoria suc 
@@ -549,17 +549,18 @@
 						       (1+ prof-actual))))
 			    (when solucao
 				  (setq custo_optimo (custo (nth 0 solucao)))
-				  (cond ((eq solucao_optima NIL)(setf solucao_optima solucao))
+				  (cond ((eq solucao_optima NIL) (setf solucao_optima solucao))
 				  ((> (custo (nth 0 solucao_optima)) custo_optimo)(setf solucao_optima solucao)))
 				 
 				
 				  
 				  ))))))))
       
-      (procura-aleatoria (problema-estado-inicial problema) nil 0)
+      (procura-aleatoria (problema-estado-inicial problema) nil 0)))
 	  solucao_optima
   )
 )
+
 
 
 (defun procura-alternativas (problema tipo-procura
@@ -586,10 +587,10 @@
      
      ))))
 
-(defun faz-afectacao(tarefas tipo-procura &key (profundidade-maxima most-positive-fixnum))
+(defun faz-afectacao(tarefas tipo-procura)
   (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_12 :estado= #'estado   ))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_3 :estado= #'estado   ))
     
 		
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
