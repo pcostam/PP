@@ -623,6 +623,24 @@
 		      (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_16 :estado= #'estado   ))
 			  (setf solucao (procura-alternativas problema tipo-procura))
 		  )
+
+		  ((string-equal tipo-procura "melhor.abordagem" )
+				(let ((var-len (list-length tarefas)))
+					(cond ((<= var-len 100)
+							(setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
+							(setf solucao (procura-alternativas problema "abordagem.alternativa"))
+						  )
+						  ((<= var-len 500)
+							(setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
+							(setf solucao (procura-alternativas problema "ILDS"))
+						  )
+						  (t
+							(setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
+							(setf solucao (procura-alternativas problema "a*.melhor.heuristica"))
+						  )
+					)
+				)
+		  )
 		  
 		  (t
 		        (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_15 :estado= #'estado   ))
@@ -634,7 +652,7 @@
 		(setf res (csp-assignments goal_state))
 	)
 	))
-
+   
    res
 	
   )
