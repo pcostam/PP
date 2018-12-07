@@ -360,21 +360,29 @@
 )
 
 (defun heuristica_12(estado)
-	(* (csp-shift-counter estado) (csp-new_shift estado))
+	(cond ((< (csp-cost estado) 10) (setf this (* (csp-shift-counter estado) (csp-new_shift estado))))
+		  (t (* (* (csp-shift-counter estado) (setf this (csp-new_shift estado)) (expo10 (log 10 (csp-cost estado))))))
+	)
+	(print this)
+	this
+)
+
+(defun expo10(e)
+	(let ((b 10))
+		(dotimes (i e)
+			(setf b (* b 10))
+		)
+	b
+	)
 )
 
 (defun heuristica_14(estado)
-    (print estado)
 	(let ((ideal 0) (x 0))
 	(dolist (shift (csp-assignments estado))
-		
 			(dolist (tarefa shift)
 				(setq ideal (+ ideal (duracao_tarefa tarefa)))
 				
-			)
-				
-
-		
+			)		
 	)
 	(print 'IDEAL)
 	(print ideal)
@@ -387,6 +395,23 @@
 	
 	
 	)
+)
+
+(defun heuristica_15(estado)
+	(cond ((< (csp-cost estado) 10) (setf this (list-length (csp-variables estado))))
+		  ((> (list-length (csp-variables estado)) (* 0.02 (csp-max-vars estado))) (setf this (* (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (list-length (csp-variables estado)))))
+		  (t (setf this (* (list-length (csp-variables estado)) (expo10 (log 10 (csp-cost estado))))))
+	)
+	this
+)
+
+(defun heuristica_16(estado)
+	(cond ((< (csp-cost estado) 10) (setf this (csp-no-service-counter estado)))
+		  ((> (list-length (csp-variables estado)) (* 0.02 (csp-max-vars estado))) (setf this (* (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (expo10 (log 10 (csp-cost estado))) (list-length (csp-variables estado)) (csp-new_shift estado))))
+		  (t (setf this (* (csp-new_shift estado) (list-length (csp-variables estado)) (expo10 (log 10 (csp-cost estado))))))
+	)
+	(print this)
+	this
 )
 
 ;;;
@@ -431,7 +456,7 @@
 	(n (list-length (csp-variables prob))))
 	
 	(block procura-ILDS
-	(loop for k from 0 to godfuckingdamnit
+	(loop for k from 0 to 1
 		do
 		(let((solucao (ILDSProbe problema (problema-estado-inicial problema) k n 0 profundidade-maxima)))
 	    (when solucao
@@ -499,7 +524,7 @@
 (defun DDS (problema profundidade-maxima)
   (let* ((solucao_optima NIL) (custo_optimo 0))
 	(block procura-DDS
-	(loop for k from 0 to godfuckingdamnit
+	(loop for k from 0 to 18
 		do
 		(let((solucao (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)))
 	    (when solucao
@@ -529,7 +554,7 @@
   (let ((estado= (problema-estado= problema)) 
 	(objectivo? (problema-objectivo? problema))
 	(solucao_optima NIL) (custo_optimo 0))
-  (dotimes (n godfuckingdamnit)
+  (dotimes (n 10)
     (labels ((esta-no-caminho? (estado caminho)
 	       (member estado caminho :test estado=))
 	     
@@ -592,7 +617,7 @@
 (defun faz-afectacao(tarefas tipo-procura)
   (let ((csp NIL) (problema NIL) (solucao NIL))
     (setf csp (csp-inicial tarefas))
-    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_3 :estado= #'estado   ))
+    (setf problema (cria-problema csp (list #'successors) :objectivo? #'objectivo :custo #'custo :heuristica #'heuristica_16 :estado= #'estado   ))
     
 		
 	(cond ((or (string-equal tipo-procura "ILDS") (string-equal tipo-procura "abordagem.alternativa") (string-equal tipo-procura "sondagem.iterativa"))
@@ -604,7 +629,7 @@
 	)
 
 	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
-		(print (string (concatenate 'string (write-to-string godfuckingdamnit) " " (write-to-string (csp-shift-counter goal_state)) " " (write-to-string time_spent) " " (write-to-string nos_exp) " " (write-to-string nos_ger))))
+		(print (string (concatenate 'string (write-to-string (csp-cost goal_state)) " " (write-to-string (csp-shift-counter goal_state)) " " (write-to-string time_spent) " " (write-to-string nos_exp) " " (write-to-string nos_ger))))
 		goal_state
 	)
   )
