@@ -394,13 +394,20 @@
 ;;;            Improved Limited-Discrepancy Search
 ;;;
 (defun ILDSProbe(problema estado k rDepth prof-actual profundidade-maxima)
+
+    (print "ESTADO")
+    (print estado)
+    (print "K")
+	(print k)
+	(print "RDEPTH")
+	(print rDepth)
     (let* 	((objectivo? (problema-objectivo? problema)))
 	
 	(block procura-ILDSProb
 	(cond ((funcall objectivo? estado) (list estado))
 		  ((= prof-actual profundidade-maxima) nil)
 	 (t
-	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
+	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL) (new_sucs NIL)
 	(min_heur 0)
 	(heur_actual 0)
 	(heur (problema-heuristica problema)))
@@ -417,20 +424,31 @@
 				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
 				  (setf i (+ i 1))
 	))))
-	(remove melhor_suc_h sucs)
-	(when(> rDepth k) (return-from procura-ILDSProb (ILDSProbe problema melhor_suc_h k (- rDepth 1) (+ prof-actual 1) profundidade-maxima)))
+	
+	(print "sucs")
+	(print sucs)
+	(setf new_sucs (remove melhor_suc_h sucs))
+	(print "new_sucs")
+	(print new_sucs)
+	(print "Melhor suc")
+	(print melhor_suc_h)
+	(print "car")
+	(print (car new_sucs))
+	(when(or (eq (car new_sucs) NIL) (> rDepth k) ) (return-from procura-ILDSProb (ILDSProbe problema melhor_suc_h k (- rDepth 1) (+ prof-actual 1) profundidade-maxima)))
 	(when(> k 0) 
-		(return-from procura-ILDSProb (ILDSProbe problema (car sucs) (- k 1) (- rDepth 1) (+ prof-actual 1) profundidade-maxima))
+		(return-from procura-ILDSProb (ILDSProbe problema (car new_sucs) (- k 1) (- rDepth 1) (+ prof-actual 1) profundidade-maxima))
 			   
 )))))))
 
 (defun ILDS (problema profundidade-maxima)
+
   (let* ((prob (problema-estado-inicial problema)) (solucao_optima NIL) (custo_optimo 0)
 	(n (list-length (csp-variables prob))))
 	
 	(block procura-ILDS
 	(loop for k from 0 to 30
 		do
+		(print "Novo ciclo")
 		(let((solucao (ILDSProbe problema (problema-estado-inicial problema) k n 0 profundidade-maxima)))
 	    (when solucao
 			(setq custo_optimo (custo (nth 0 solucao)))
@@ -452,12 +470,17 @@
 ;;;             Depth-Bounded Discrepancy Search
 ;;;
 (defun DDSProbe(problema estado k prof-actual profundidade-maxima)
+    (print "ESTADO")
+	(print estado)
+	(print "K")
+	(print k)
 	(let* ((objectivo? (problema-objectivo? problema)))
 	(block procura-DDSProbe
 	(cond ((funcall objectivo? estado) (list estado))
 		  ((= prof-actual profundidade-maxima) nil)
 	 (t
-	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL)
+
+	(let ((sucs (problema-gera-sucessores problema estado)) (melhor_suc_h NIL) (new_sucs NIL)
 	(min_heur 0)
 	(heur_actual 0)
 	(heur (problema-heuristica problema)))
@@ -474,20 +497,27 @@
 				  (cond ((< heur_actual min_heur) (setf min_heur heur_actual) (setf melhor_suc_h suc)))
 				  (setf i (+ i 1))
 	))))
-	(remove melhor_suc_h sucs)
-	(when(= k 0) (return-from procura-DDSProbe (DDSProbe problema melhor_suc_h 0 (+ prof-actual 1) profundidade-maxima)))
-	(when(= k 1) 
-	
-		(return-from procura-DDSProbe (DDSProbe problema (car sucs) 0 (+ prof-actual 1) profundidade-maxima))
+	(setf new_sucs (remove melhor_suc_h sucs))
+	(print "sucs")
+	(print sucs)
+	(print "melhor_suc_h")
+	(print melhor_suc_h)
+	(print "new_sucs")
+	(print new_sucs)
+	(when(= k 0) (print "k = 0") (return-from procura-DDSProbe (DDSProbe problema melhor_suc_h 0 (+ prof-actual 1) profundidade-maxima)))
+	(when(and (not(eq new_sucs NIL))(= k 1)) 
+		(print "k = 1")
+		(return-from procura-DDSProbe (DDSProbe problema (car new_sucs) 0 (+ prof-actual 1) profundidade-maxima))
 	)
 	(when(> k 1) 
 	(let(( solucao (DDSProbe problema melhor_suc_h (- k 1) (+ prof-actual 1) profundidade-maxima)))
 	(when solucao 
 		(cond ((funcall objectivo? (nth 0 solucao)) (return-from  procura-DDSProbe solucao))
 		
-		(t
+		((not(eq new_sucs NIL))
+		(print "else")
 		;;; se solucao nao for um estado objetivo, tentar ir contra a heuristica 
-			(return-from procura-DDSProbe (DDSProbe problema (car sucs) 0 (+ prof-actual 1) profundidade-maxima))
+			(return-from procura-DDSProbe (DDSProbe problema (car new_sucs) 0 (+ prof-actual 1) profundidade-maxima))
 		
 		))
 	
@@ -497,13 +527,17 @@
 (defun DDS (problema profundidade-maxima)
   (let* ((solucao_optima NIL) (custo_optimo 0))
 	(block procura-DDS
-	(loop for k from 0 to 0
+	(loop for k from 0 to 50
 		do
+		(print "Profundidade-maxima")
+		(print profundidade-maxima)
+		(print "Novo ciclo")
+		(print k)
 		(let((solucao (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)))
 	    (when solucao
 			(setq custo_optimo (custo (nth 0 solucao)))
-		    (cond ((eq solucao_optima NIL)(setf solucao_optima solucao))
-		    ((> (custo (nth 0 solucao_optima)) custo_optimo)(setf solucao_optima solucao)))
+		    (cond ((eq solucao_optima NIL) (print "inicio") (setf solucao_optima solucao))
+		    ((> (custo (nth 0 solucao_optima)) custo_optimo) (print "update") (setf solucao_optima solucao)))
 				 
 				
 				  
