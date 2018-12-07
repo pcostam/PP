@@ -519,6 +519,7 @@
 )))
 
 (defun random-from-range (start end)
+  (setf *random-state* (make-random-state t))
   (+ start (random (+ 1 (- end start)))))
   
 ;;;
@@ -543,6 +544,8 @@
 				(let((sucs (problema-gera-sucessores problema estado))
 				  (idx 0)  (suc NIL))
 				(setf idx (random-from-range 0 (- (list-length sucs) 1)))
+				(print "index")
+				(print idx)
 				(setf suc (elt sucs idx))
 
 			  (let ((solucao (procura-aleatoria suc 
