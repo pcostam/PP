@@ -57,8 +57,6 @@
 )
 
 (defun custo(estado)
-   (print 'CUSTO)
-   (print (csp-cost estado))
    (csp-cost estado)
 )
 
@@ -222,13 +220,14 @@
 							(cond ((and (<= old-time 240) (> time-count 240))
 										(cond ( (< (- (nth 2 next-task) (nth 3 task)) 80) (setf valid nil) ) )
 										(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
+										(setf time-count (- time-count 40))
 								  )
 							)
 					  )
 					  (t
 							(cond ((and (<= old-time 240) (> time-count 240))
 										(cond ( (< (- (nth 2 next-task) (nth 3 task)) 40) (setf valid nil) ) )
-										(setf (csp-no-service-counter state) (+ (csp-no-service-counter state) 1))
+										(setf time-count (- time-count 40))
 								  )
 							)
 					  )
@@ -245,7 +244,7 @@
 		)
 
 		(cond ( (> time-count 480) (setf valid nil) ) )
-		(cond ((equal valid T) (setf (csp-cost state) (max (+ (csp-cost state) time-count) 360))))
+		(cond ((equal valid T) (setf (csp-cost state) (+ (csp-cost state) (max time-count 360)))))
 		valid
    )
 )
@@ -294,7 +293,7 @@
 		(dolist (tarefa shift)
 			(setq time_shift (+ time_shift (duracao_tarefa tarefa)))
 		)
-		(setq time (+ time (- 8 time_shift)))
+		(setq time (+ time (+ time_shift)))
 	)
 
 	)
@@ -395,12 +394,6 @@
 ;;;
 (defun ILDSProbe(problema estado k rDepth prof-actual profundidade-maxima)
 
-    (print "ESTADO")
-    (print estado)
-    (print "K")
-	(print k)
-	(print "RDEPTH")
-	(print rDepth)
     (let* 	((objectivo? (problema-objectivo? problema)))
 	
 	(block procura-ILDSProb
@@ -425,15 +418,7 @@
 				  (setf i (+ i 1))
 	))))
 	
-	(print "sucs")
-	(print sucs)
 	(setf new_sucs (remove melhor_suc_h sucs))
-	(print "new_sucs")
-	(print new_sucs)
-	(print "Melhor suc")
-	(print melhor_suc_h)
-	(print "car")
-	(print (car new_sucs))
 	(when(or (eq (car new_sucs) NIL) (> rDepth k) ) (return-from procura-ILDSProb (ILDSProbe problema melhor_suc_h k (- rDepth 1) (+ prof-actual 1) profundidade-maxima)))
 	(when(> k 0) 
 		(return-from procura-ILDSProb (ILDSProbe problema (car new_sucs) (- k 1) (- rDepth 1) (+ prof-actual 1) profundidade-maxima))
@@ -446,9 +431,8 @@
 	(n (list-length (csp-variables prob))))
 	
 	(block procura-ILDS
-	(loop for k from 0 to 30
+	(loop for k from 0 to godfuckingdamnit
 		do
-		(print "Novo ciclo")
 		(let((solucao (ILDSProbe problema (problema-estado-inicial problema) k n 0 profundidade-maxima)))
 	    (when solucao
 			(setq custo_optimo (custo (nth 0 solucao)))
@@ -470,10 +454,6 @@
 ;;;             Depth-Bounded Discrepancy Search
 ;;;
 (defun DDSProbe(problema estado k prof-actual profundidade-maxima)
-    (print "ESTADO")
-	(print estado)
-	(print "K")
-	(print k)
 	(let* ((objectivo? (problema-objectivo? problema)))
 	(block procura-DDSProbe
 	(cond ((funcall objectivo? estado) (list estado))
@@ -498,15 +478,8 @@
 				  (setf i (+ i 1))
 	))))
 	(setf new_sucs (remove melhor_suc_h sucs))
-	(print "sucs")
-	(print sucs)
-	(print "melhor_suc_h")
-	(print melhor_suc_h)
-	(print "new_sucs")
-	(print new_sucs)
-	(when(= k 0) (print "k = 0") (return-from procura-DDSProbe (DDSProbe problema melhor_suc_h 0 (+ prof-actual 1) profundidade-maxima)))
-	(when(and (not(eq new_sucs NIL))(= k 1)) 
-		(print "k = 1")
+	(when(= k 0) (return-from procura-DDSProbe (DDSProbe problema melhor_suc_h 0 (+ prof-actual 1) profundidade-maxima)))
+	(when(and (not(eq new_sucs NIL))(= k 1))
 		(return-from procura-DDSProbe (DDSProbe problema (car new_sucs) 0 (+ prof-actual 1) profundidade-maxima))
 	)
 	(when(> k 1) 
@@ -515,7 +488,6 @@
 		(cond ((funcall objectivo? (nth 0 solucao)) (return-from  procura-DDSProbe solucao))
 		
 		((not(eq new_sucs NIL))
-		(print "else")
 		;;; se solucao nao for um estado objetivo, tentar ir contra a heuristica 
 			(return-from procura-DDSProbe (DDSProbe problema (car new_sucs) 0 (+ prof-actual 1) profundidade-maxima))
 		
@@ -527,17 +499,13 @@
 (defun DDS (problema profundidade-maxima)
   (let* ((solucao_optima NIL) (custo_optimo 0))
 	(block procura-DDS
-	(loop for k from 0 to 50
+	(loop for k from 0 to godfuckingdamnit
 		do
-		(print "Profundidade-maxima")
-		(print profundidade-maxima)
-		(print "Novo ciclo")
-		(print k)
 		(let((solucao (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)))
 	    (when solucao
 			(setq custo_optimo (custo (nth 0 solucao)))
-		    (cond ((eq solucao_optima NIL) (print "inicio") (setf solucao_optima solucao))
-		    ((> (custo (nth 0 solucao_optima)) custo_optimo) (print "update") (setf solucao_optima solucao)))
+		    (cond ((eq solucao_optima NIL) (setf solucao_optima solucao))
+		    ((> (custo (nth 0 solucao_optima)) custo_optimo) (setf solucao_optima solucao)))
 				 
 				
 				  
@@ -561,7 +529,7 @@
   (let ((estado= (problema-estado= problema)) 
 	(objectivo? (problema-objectivo? problema))
 	(solucao_optima NIL) (custo_optimo 0))
-  (dotimes (n 100)
+  (dotimes (n godfuckingdamnit)
     (labels ((esta-no-caminho? (estado caminho)
 	       (member estado caminho :test estado=))
 	     
@@ -636,18 +604,8 @@
 	)
 
 	(let* ((seq (nth 0 solucao)) (last_index (- (list-length seq) 1)) (goal_state (nth last_index seq)) (time_spent (/ (nth 1 solucao) internal-time-units-per-second 1.0)) (nos_exp (nth 2 solucao)) (nos_ger (nth 3 solucao)))
-		(csp-assignments goal_state)
-		(print "GOAL STATE: ")
-		(print goal_state)
-		(print "")
-		(print "TIME SPENT (s): ")
-		(print time_spent)
-		(print "")
-		(print "EXPANDED NODES: ")
-		(print nos_exp)
-		(print "")
-		(print "GENERATED NODES: ")
-		(print nos_ger)
+		(print (string (concatenate 'string (write-to-string godfuckingdamnit) " " (write-to-string (csp-shift-counter goal_state)) " " (write-to-string time_spent) " " (write-to-string nos_exp) " " (write-to-string nos_ger))))
+		goal_state
 	)
   )
 )
