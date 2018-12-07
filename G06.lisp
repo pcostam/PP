@@ -478,13 +478,13 @@
 	(remove melhor_suc_h sucs)
 	(when(= k 0) (return-from procura-DDSProbe (DDSProbe problema melhor_suc_h 0 (+ prof-actual 1) profundidade-maxima)))
 	(when(= k 1) 
-	(dolist (suc sucs)
-		(return-from procura-DDSProbe (DDSProbe problema suc 0 (+ prof-actual 1) profundidade-maxima))
-	))
+	
+		(return-from procura-DDSProbe (DDSProbe problema (car sucs) 0 (+ prof-actual 1) profundidade-maxima))
+	)
 	(when(> k 1) 
 	(let(( solucao (DDSProbe problema melhor_suc_h (- k 1) (+ prof-actual 1) profundidade-maxima)))
 	(when solucao 
-		(cond ((funcall objectivo? estado) (return-from  procura-DDSProbe solucao))
+		(cond ((funcall objectivo? (nth 0 solucao)) (return-from  procura-DDSProbe solucao))
 		
 		(t
 		;;; se solucao nao for um estado objetivo, tentar ir contra a heuristica 
@@ -496,12 +496,27 @@
 ))))
 
 (defun DDS (problema profundidade-maxima)
-  (let* ((prob (problema-estado-inicial problema))
+  (let* ((prob (problema-estado-inicial problema)) (solucao_optima NIL) 
 	(n (list-length (csp-variables prob))))
 	(block procura-DDS
-	(loop for k from 0 to n
-				do (return-from procura-DDS (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)		
-)))))
+	(loop for k from 0 to 30
+		do
+		(let((solucao (DDSProbe problema (problema-estado-inicial problema) k 0 profundidade-maxima)))
+	    (when solucao
+			(setq custo_optimo (custo (nth 0 solucao)))
+		    (cond ((eq solucao_optima NIL)(setf solucao_optima solucao))
+		    ((> (custo (nth 0 solucao_optima)) custo_optimo)(setf solucao_optima solucao)))
+				 
+				
+				  
+				  )
+			
+			
+			)
+				  )
+				  
+		solucao_optima
+)))
 
 (defun random-from-range (start end)
   (+ start (random (+ 1 (- end start)))))
